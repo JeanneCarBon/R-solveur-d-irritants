@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Résolveur d'irritants</title>
+  <meta name="description" content="Un assistant d'IA générative pour trouver des solutions aux irritants de votre activité, avec votre propre clé API.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+
+  <!-- ÉCRAN 1 : CONFIGURATION -->
+  <main id="setup" class="setup" hidden>
+    <div class="setup-card">
+      <div class="brand">
+        <img src="favicon.svg" alt="" width="40" height="40">
+        <div>
+          <h1>Résolveur d'irritants</h1>
+          <p class="muted">Décrivez ce qui vous freine au quotidien, l'IA vous aide à trouver une solution.</p>
+        </div>
+      </div>
+
+      <form id="setup-form" autocomplete="off" novalidate>
+        <label for="provider">Fournisseur d'IA</label>
+        <select id="provider" required></select>
+
+        <label for="api-key">Clé API</label>
+        <div class="input-row">
+          <input id="api-key" type="password" required spellcheck="false" autocomplete="off">
+          <button type="button" id="toggle-key" class="ghost" aria-label="Afficher la clé">Afficher</button>
+        </div>
+        <p class="hint">Pas encore de clé ? <a id="key-link" href="#" target="_blank" rel="noopener noreferrer">Créer une clé chez ce fournisseur</a></p>
+
+        <label for="model">Modèle</label>
+        <div class="input-row">
+          <input id="model" list="model-list" required spellcheck="false">
+          <button type="button" id="load-models" class="ghost">Tester la clé</button>
+        </div>
+        <datalist id="model-list"></datalist>
+        <p class="hint" id="model-status">Cliquez sur « Tester la clé » pour vérifier votre clé et voir vos modèles.</p>
+
+        <label for="activity">Votre activité <span class="muted">(facultatif)</span></label>
+        <input id="activity" maxlength="200" placeholder="Ex. : responsable administratif dans une PME du BTP">
+
+        <label class="check">
+          <input type="checkbox" id="remember">
+          <span>Mémoriser ma clé sur cet appareil</span>
+        </label>
+
+        <p class="error" id="setup-error" role="alert" hidden></p>
+
+        <button type="submit" class="primary">Commencer</button>
+      </form>
+
+      <details class="privacy">
+        <summary>Où va ma clé ?</summary>
+        <p>Votre clé reste dans votre navigateur. Elle est envoyée uniquement au fournisseur choisi, directement, sans passer par un serveur de cette application. Sans la case « Mémoriser », elle est effacée à la fermeture de l'onglet.</p>
+        <p>Les messages que vous écrivez sont traités par ce fournisseur et facturés sur votre compte. N'y mettez pas de données confidentielles ou personnelles non anonymisées.</p>
+      </details>
+    </div>
+  </main>
+
+  <!-- ÉCRAN 2 : CONVERSATION -->
+  <div id="chat" class="chat" hidden>
+    <header class="topbar">
+      <div class="topbar-title">
+        <img src="favicon.svg" alt="" width="28" height="28">
+        <div>
+          <strong>Résolveur d'irritants</strong>
+          <span class="badge" id="model-badge"></span>
+        </div>
+      </div>
+      <nav class="topbar-actions">
+        <button type="button" id="new-chat" class="ghost">Nouvelle conversation</button>
+        <button type="button" id="export" class="ghost">Exporter</button>
+        <button type="button" id="settings" class="ghost">Paramètres</button>
+      </nav>
+    </header>
+
+    <section id="messages" class="messages" aria-live="polite">
+      <div id="welcome" class="welcome">
+        <h2>Quel irritant voulez-vous résoudre ?</h2>
+        <p class="muted">Décrivez la situation avec vos mots. L'assistant vous posera quelques questions, cherchera les causes, puis vous proposera des solutions et un plan d'action.</p>
+        <div id="examples" class="examples"></div>
+      </div>
+    </section>
+
+    <form id="composer" class="composer">
+      <textarea id="input" rows="1" placeholder="Décrivez votre irritant…" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne" required></textarea>
+      <button type="submit" id="send" class="primary">Envoyer</button>
+    </form>
+    <p class="footnote">L'IA peut se tromper : vérifiez ses propositions avant de les appliquer.</p>
+  </div>
+
+  <noscript><p class="noscript">Cette application a besoin de JavaScript.</p></noscript>
+</body>
+</html>

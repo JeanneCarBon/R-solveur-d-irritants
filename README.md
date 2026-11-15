@@ -3,7 +3,7 @@
 Agent conversationnel d'IA générative qui aide chaque utilisateur à trouver une solution à un irritant de son activité (tâche pénible, perte de temps, friction entre équipes, outil mal adapté…).
 
 Chaque utilisateur utilise **sa propre clé API** et choisit **son fournisseur** :
-OpenAI, Anthropic (Claude), Google (Gemini), Mistral AI, Groq ou OpenRouter.
+**Groq** par défaut (modèle `openai/gpt-oss-120b`), ou OpenAI, Anthropic (Claude), Google (Gemini), Mistral AI et OpenRouter.
 
 ## Fonctionnement
 
@@ -16,6 +16,8 @@ OpenAI, Anthropic (Claude), Google (Gemini), Mistral AI, Groq ou OpenRouter.
 
 ```
 agent-irritants/
+├── .github/workflows/
+│   └── deploy.yml          ← mise en ligne automatique sur Firebase à chaque modification
 ├── public/                 ← le site publié
 │   ├── index.html          ← page unique (configuration + conversation)
 │   ├── favicon.svg
@@ -26,16 +28,17 @@ agent-irritants/
 │       ├── prompt.js       ← consignes de l'agent (à personnaliser)
 │       └── markdown.js     ← mise en forme sécurisée des réponses
 ├── firebase.json           ← configuration d'hébergement + en-têtes de sécurité
-├── .firebaserc             ← identifiant du projet Firebase (à compléter)
 ├── .gitignore
 ├── GUIDE.md                ← guide de mise en ligne pas à pas
+├── Guide-mise-en-ligne.pdf ← le même guide en PDF
 └── README.md
 ```
 
 ## Mise en ligne
 
-Suivez le [guide pas à pas](GUIDE.md).
+Entièrement depuis le navigateur, sans logiciel à installer : suivez le [guide pas à pas](GUIDE.md).
+En résumé : projet Firebase, compte de service Google Cloud, secret `FIREBASE_SERVICE_ACCOUNT` et variable `FIREBASE_PROJECT_ID` dans GitHub, puis dépôt des fichiers. GitHub Actions publie le site à chaque modification de la branche `main`.
 
 ## Personnaliser l'agent
 
-Modifiez le texte de `public/js/prompt.js` (consignes et exemples d'irritants), puis redéployez.
+Modifiez `public/js/prompt.js` (consignes et exemples d'irritants) directement sur GitHub : la nouvelle version est publiée automatiquement.

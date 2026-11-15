@@ -2,279 +2,293 @@
 
 Ce guide vous emmène du dossier de fichiers jusqu'à une application en ligne, accessible à vos utilisateurs par une adresse du type `https://votre-projet.web.app`.
 
-Durée : 30 à 45 minutes la première fois. Coût : 0 € (le plan gratuit « Spark » de Firebase suffit ; chaque utilisateur paie sa propre consommation d'IA chez son fournisseur).
+**Tout se fait dans le navigateur.** Vous n'installez aucun logiciel et ne tapez aucune commande : vous utilisez uniquement les sites de GitHub, de Firebase et de Google Cloud. GitHub se charge ensuite de publier automatiquement l'application sur Firebase à chaque modification.
+
+Durée : environ 45 minutes la première fois. Coût : 0 € (le plan gratuit « Spark » de Firebase suffit, et GitHub est gratuit ; chaque utilisateur utilise sa propre clé d'IA).
+
+**Fournisseur d'IA retenu : Groq.** L'application propose Groq par défaut, avec le modèle `openai/gpt-oss-120b`. Groq offre une formule gratuite (avec des limites par minute et par jour) et répond très vite. Les autres fournisseurs (OpenAI, Claude, Gemini, Mistral, OpenRouter) restent disponibles dans la liste si un utilisateur en a besoin.
+
+### Vue d'ensemble
+
+| Étape | Où | Ce que vous faites |
+|---|---|---|
+| 1 | Firebase | Créer le projet qui hébergera le site |
+| 2 | Google Cloud | Créer la « clé de déploiement » qui autorise GitHub à publier |
+| 3 | GitHub | Créer le dépôt qui contiendra les fichiers |
+| 4 | GitHub | Enregistrer la clé de déploiement et l'identifiant du projet |
+| 5 | GitHub | Déposer les fichiers : la mise en ligne démarre toute seule |
+| 6 | Navigateur | Ouvrir l'application et la tester avec Groq |
 
 ---
 
 ## Étape 0 — Ce qu'il vous faut
 
-- Un ordinateur (Mac ou Windows) avec une connexion Internet.
-- Un compte Google (pour Firebase).
+- Un ordinateur avec un navigateur récent (Chrome, Edge, Firefox ou Safari).
+- Un compte Google (pour Firebase et Google Cloud).
 - Un compte GitHub (gratuit) : <https://github.com/signup>.
-- Node.js, version 20 ou plus récente : téléchargez la version « LTS » sur <https://nodejs.org> et installez-la (suivant, suivant, terminer).
+- Une clé API Groq pour vos essais (voir ci-dessous).
 - Le dossier `agent-irritants` fourni, avec ce contenu :
 
 ```
 agent-irritants/
-├── public/            (index.html, favicon.svg, css/, js/)
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      (la mise en ligne automatique)
+├── public/                 (index.html, favicon.svg, css/, js/)
 ├── firebase.json
-├── .firebaserc
 ├── .gitignore
 ├── GUIDE.md
+├── Guide-mise-en-ligne.pdf
 └── README.md
 ```
 
-> **Fichiers cachés.** `.firebaserc` et `.gitignore` commencent par un point : ils sont masqués par défaut.
+> **Fichiers cachés.** Le dossier `.github` et le fichier `.gitignore` commencent par un point : ils sont masqués par défaut.
 > Sur Mac, dans le Finder, appuyez sur **Cmd + Maj + .** pour les afficher. Sur Windows, dans l'Explorateur : **Affichage › Afficher › Éléments masqués**.
+> Le dossier `.github` est indispensable : c'est lui qui déclenche la mise en ligne.
+
+### Créer votre clé API Groq (5 min)
+
+1. Allez sur <https://console.groq.com> et connectez-vous (compte Google, GitHub ou adresse e-mail). L'inscription est gratuite.
+2. Dans le menu, ouvrez **API Keys** (accès direct : <https://console.groq.com/keys>).
+3. Cliquez sur **Create API Key**, donnez-lui un nom (par exemple `resolveur-irritants`) et validez.
+4. **Copiez la clé immédiatement** (elle commence par `gsk_`) et rangez-la dans un endroit sûr, par exemple votre gestionnaire de mots de passe : Groq ne l'affichera plus ensuite. Si vous la perdez, supprimez-la et créez-en une nouvelle.
+
+> **Une clé = une personne.** Chaque utilisateur de l'application crée sa propre clé Groq (voir Étape 9). La clé Groq n'est **jamais** déposée sur GitHub ni dans Firebase : chacun la saisit dans l'application.
 
 ---
 
-## Étape 1 — Tester l'application sur votre ordinateur (facultatif, 5 min)
-
-1. Ouvrez un terminal :
-   - Mac : application **Terminal** (Cmd + Espace, tapez « Terminal »).
-   - Windows : **PowerShell** (menu Démarrer, tapez « PowerShell »).
-2. Placez-vous dans le dossier (remplacez le chemin par le vôtre ; astuce : tapez `cd ` puis glissez le dossier dans la fenêtre) :
-
-   ```bash
-   cd chemin/vers/agent-irritants
-   ```
-
-3. Lancez un petit serveur local :
-
-   ```bash
-   npx serve public
-   ```
-
-   Répondez `y` si on vous demande d'installer `serve`.
-4. Ouvrez l'adresse affichée (en général <http://localhost:3000>) dans votre navigateur.
-5. Choisissez un fournisseur, collez une clé API, cliquez sur **Tester la clé**, puis **Commencer**.
-6. Arrêtez le serveur avec **Ctrl + C** dans le terminal.
-
-> Ouvrir directement `index.html` par un double-clic ne fonctionne pas : le navigateur bloque les scripts ouverts depuis un fichier local. Passez toujours par `npx serve`.
-
----
-
-## Étape 2 — Mettre les fichiers sur GitHub (10 min)
-
-GitHub conserve vos fichiers et leur historique. Deux méthodes : choisissez-en une.
-
-### Méthode A — Par le site web (la plus simple)
-
-1. Connectez-vous sur <https://github.com>.
-2. En haut à droite, cliquez sur **+** › **New repository**.
-3. Renseignez :
-   - **Repository name** : `agent-irritants`
-   - **Visibility** : **Private** (conseillé) ou Public. L'application ne contient aucun secret, les deux sont possibles.
-   - Ne cochez **pas** « Add a README file » (vous en avez déjà un).
-4. Cliquez sur **Create repository**.
-5. Sur la page qui s'affiche, cliquez sur le lien **uploading an existing file**.
-6. Affichez les fichiers cachés (voir Étape 0), puis glissez-déposez **tout le contenu** du dossier `agent-irritants` (le dossier `public`, `firebase.json`, `.firebaserc`, `.gitignore`, `GUIDE.md`, `README.md`).
-   Vérifiez dans la liste que le dossier `public` apparaît avec ses sous-dossiers `css` et `js`.
-7. En bas, dans **Commit changes**, écrivez « Première version » et cliquez sur **Commit changes**.
-
-### Méthode B — Avec Git en ligne de commande
-
-Si Git est installé (`git --version` dans le terminal pour vérifier) :
-
-```bash
-cd chemin/vers/agent-irritants
-```
-
-```bash
-git init -b main
-```
-
-```bash
-git add .
-```
-
-```bash
-git commit -m "Première version"
-```
-
-Créez le dépôt vide sur GitHub (étapes 1 à 4 de la méthode A), puis copiez l'adresse affichée et lancez (en remplaçant `VOTRE-COMPTE`) :
-
-```bash
-git remote add origin https://github.com/VOTRE-COMPTE/agent-irritants.git
-```
-
-```bash
-git push -u origin main
-```
-
----
-
-## Étape 3 — Créer le projet Firebase (5 min)
+## Étape 1 — Créer le projet Firebase (5 min)
 
 1. Allez sur <https://console.firebase.google.com> et connectez-vous avec votre compte Google.
 2. Cliquez sur **Créer un projet** (ou **Ajouter un projet**).
-3. Donnez-lui un nom, par exemple `resolveur-irritants`. Firebase propose un **identifiant de projet** juste en dessous (par exemple `resolveur-irritants-4f2a1`). **Notez-le**, il servira à l'étape 5 et donnera l'adresse du site.
-4. Google Analytics : vous pouvez le désactiver (non utilisé par l'application).
+3. Donnez-lui un nom, par exemple `resolveur-irritants`. Firebase affiche juste en dessous un **identifiant de projet** (par exemple `resolveur-irritants-4f2a1`).
+   **Notez cet identifiant exactement** : il servira à l'étape 4 et formera l'adresse de votre site.
+4. Google Analytics : vous pouvez le désactiver (l'application ne l'utilise pas).
 5. Cliquez sur **Créer le projet**, attendez, puis **Continuer**.
-6. Dans le menu de gauche : **Créer › Hosting** (ou **Build › Hosting**), puis **Commencer**. Vous pouvez passer les écrans d'explication (les commandes sont détaillées ci-dessous).
+6. Dans le menu de gauche, ouvrez **Créer › Hosting** (ou **Build › Hosting**), puis cliquez sur **Commencer**.
+   Firebase affiche des écrans d'explication avec des commandes à taper : **ignorez-les** et cliquez sur **Suivant** jusqu'à la fin, puis **Continuer vers la console**. Cette étape active l'hébergement de votre projet ; les commandes, elles, sont remplacées par GitHub.
+
+> **Retrouver l'identifiant plus tard** : dans la console Firebase, roue dentée ⚙️ en haut à gauche › **Paramètres du projet** › ligne **ID du projet**.
 
 Le plan gratuit **Spark** suffit : aucune carte bancaire n'est demandée.
 
 ---
 
-## Étape 4 — Installer l'outil Firebase (5 min)
+## Étape 2 — Créer la clé de déploiement (10 min)
 
-Dans le terminal :
+GitHub a besoin d'une autorisation pour publier sur votre projet Firebase. Cette autorisation prend la forme d'un **compte de service** (un « utilisateur robot ») et de sa clé, un petit fichier `.json`. Tout se passe dans la console Google Cloud, qui gère votre projet Firebase en coulisses.
 
-```bash
-npm install -g firebase-tools
+### 2.1 Créer le compte de service
+
+1. Ouvrez <https://console.cloud.google.com/iam-admin/serviceaccounts> (même compte Google que pour Firebase).
+2. En haut de la page, dans le sélecteur de projet, choisissez **le projet qui porte le nom de votre projet Firebase** (par exemple `resolveur-irritants`).
+3. Cliquez sur **+ Créer un compte de service**.
+4. **Nom du compte de service** : `github-deploiement`. L'identifiant se remplit tout seul. Cliquez sur **Créer et continuer**.
+5. **Accorder à ce compte de service l'accès au projet** : ajoutez ces trois rôles, un par un, avec **+ Ajouter un autre rôle** (tapez le nom dans le champ de recherche) :
+   - **Administrateur Firebase Hosting** (*Firebase Hosting Admin*) : publier le site ;
+   - **Lecteur de clés API** (*API Keys Viewer*) : requis par l'outil de publication ;
+   - **Lecteur Cloud Run** (*Cloud Run Viewer*) : requis par l'outil de publication.
+6. Cliquez sur **Continuer**, puis **OK** (l'étape « Autoriser les utilisateurs… » reste vide).
+
+### 2.2 Télécharger la clé du compte de service
+
+1. Dans la liste, cliquez sur le compte `github-deploiement` que vous venez de créer.
+2. Ouvrez l'onglet **Clés**.
+3. Cliquez sur **Ajouter une clé › Créer une clé**, choisissez **JSON**, puis **Créer**.
+4. Un fichier `.json` se télécharge sur votre ordinateur. Gardez-le à portée de main pour l'étape 4.
+
+> **Ce fichier est un secret.** Il permet de publier n'importe quoi sur votre site. Ne l'envoyez à personne, ne le déposez pas dans les fichiers du dépôt GitHub (seulement dans les « secrets », étape 4), et **supprimez-le de votre ordinateur** une fois l'étape 4 terminée. En cas de doute, supprimez la clé dans l'onglet **Clés** et créez-en une nouvelle.
+
+> **« La création de clés de compte de service est désactivée »** : si ce message apparaît, votre compte Google dépend d'une organisation (entreprise, collectivité, école) qui interdit ces clés. Demandez à votre service informatique d'autoriser la création de la clé pour ce projet, ou utilisez un compte Google personnel pour héberger l'application.
+
+---
+
+## Étape 3 — Créer le dépôt GitHub (3 min)
+
+1. Connectez-vous sur <https://github.com>.
+2. En haut à droite, cliquez sur **+** › **New repository**.
+3. Renseignez :
+   - **Repository name** : `agent-irritants`
+   - **Visibility** : **Private** (conseillé) ou Public. Les fichiers de l'application ne contiennent aucun secret, les deux sont possibles.
+   - Ne cochez **pas** « Add a README file » : le dépôt doit rester vide pour l'instant.
+4. Cliquez sur **Create repository**. Laissez cette page ouverte.
+
+---
+
+## Étape 4 — Enregistrer les accès dans GitHub (5 min)
+
+On donne à GitHub la clé de déploiement (en secret chiffré) et l'identifiant du projet Firebase, **avant** de déposer les fichiers.
+
+### 4.1 Le secret : la clé de déploiement
+
+1. Dans votre dépôt, cliquez sur l'onglet **Settings** (Paramètres), tout à droite.
+2. Dans le menu de gauche : **Secrets and variables › Actions**.
+3. Onglet **Secrets**, cliquez sur **New repository secret**.
+4. **Name** : `FIREBASE_SERVICE_ACCOUNT` (exactement, en majuscules).
+5. **Secret** : ouvrez le fichier `.json` téléchargé à l'étape 2 avec un éditeur de texte (Bloc-notes, TextEdit), sélectionnez **tout** son contenu (Ctrl + A ou Cmd + A), copiez-le et collez-le ici. Le texte commence par `{` et se termine par `}`.
+6. Cliquez sur **Add secret**. GitHub le chiffre : personne, pas même vous, ne pourra plus le lire.
+7. Supprimez maintenant le fichier `.json` de votre ordinateur (et videz la corbeille).
+
+### 4.2 La variable : l'identifiant du projet
+
+1. Toujours dans **Secrets and variables › Actions**, ouvrez l'onglet **Variables**.
+2. Cliquez sur **New repository variable**.
+3. **Name** : `FIREBASE_PROJECT_ID`
+4. **Value** : l'identifiant noté à l'étape 1 (par exemple `resolveur-irritants-4f2a1`), sans espace.
+5. Cliquez sur **Add variable**.
+
+---
+
+## Étape 5 — Déposer les fichiers : la mise en ligne démarre (10 min)
+
+1. Revenez sur la page d'accueil du dépôt (onglet **Code**). Cliquez sur le lien **uploading an existing file** (ou **Add file › Upload files**).
+2. Affichez les fichiers cachés (voir Étape 0), ouvrez le dossier `agent-irritants` et glissez-déposez **tout son contenu** dans la page : le dossier `.github`, le dossier `public`, `firebase.json`, `.gitignore`, `GUIDE.md`, `Guide-mise-en-ligne.pdf`, `README.md`.
+3. Vérifiez la liste affichée : on doit y voir `.github/workflows/deploy.yml` ainsi que `public/index.html`, `public/css/style.css` et les quatre fichiers de `public/js/`.
+4. En bas, dans **Commit changes**, écrivez « Première version » et cliquez sur **Commit changes**.
+
+GitHub lance aussitôt la mise en ligne. Pour la suivre :
+
+5. Ouvrez l'onglet **Actions** du dépôt. Une ligne **Mise en ligne sur Firebase** apparaît avec un rond orange (en cours).
+6. Au bout d'une à deux minutes, le rond devient une **coche verte** ✅ : votre site est en ligne.
+   En cas de **croix rouge** ❌, cliquez sur la ligne pour lire l'erreur et reportez-vous au **Dépannage** en fin de guide.
+
+> **Le dossier `.github` n'apparaît pas après le dépôt ?** Certains navigateurs ignorent les dossiers cachés lors d'un glisser-déposer. Créez alors le fichier directement sur GitHub :
+> 1. **Add file › Create new file**.
+> 2. Dans le champ du nom, tapez exactement `.github/workflows/deploy.yml` (les `/` créent les dossiers).
+> 3. Collez le contenu ci-dessous, puis **Commit changes**.
+
+```yaml
+name: Mise en ligne sur Firebase
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
+          projectId: "${{ vars.FIREBASE_PROJECT_ID }}"
+          channelId: live
 ```
 
-> Sur Mac, si vous obtenez une erreur de permission (`EACCES`), relancez avec `sudo npm install -g firebase-tools` et saisissez le mot de passe de votre session.
-
-Connectez l'outil à votre compte Google (une page s'ouvre dans le navigateur, acceptez) :
-
-```bash
-firebase login
-```
-
-Vérifiez que votre projet apparaît :
-
-```bash
-firebase projects:list
-```
+> **Relancer la mise en ligne à la main** : onglet **Actions** › **Mise en ligne sur Firebase** (menu de gauche) › bouton **Run workflow** › **Run workflow**. Utile après avoir corrigé un secret ou une variable.
 
 ---
 
-## Étape 5 — Publier le site (5 min)
+## Étape 6 — Ouvrir et tester l'application (5 min)
 
-1. Ouvrez le fichier `.firebaserc` avec un éditeur de texte (TextEdit, Bloc-notes, VS Code…).
-2. Remplacez `REMPLACEZ-PAR-VOTRE-ID-DE-PROJET` par l'identifiant noté à l'étape 3 :
-
-   ```json
-   {
-     "projects": {
-       "default": "resolveur-irritants-4f2a1"
-     }
-   }
-   ```
-
-3. Enregistrez. Dans le terminal, depuis le dossier `agent-irritants` :
-
-   ```bash
-   firebase deploy --only hosting
-   ```
-
-4. À la fin, Firebase affiche **Hosting URL: https://resolveur-irritants-4f2a1.web.app**. Votre application est en ligne. Ouvrez cette adresse pour vérifier.
-
-> **N'exécutez pas `firebase init hosting`** : la configuration est déjà prête dans `firebase.json`, et cette commande proposerait d'écraser votre `index.html`. Si vous l'avez lancée par erreur, répondez **No** à « Overwrite public/index.html? ».
-
-5. Pensez à reporter la modification de `.firebaserc` sur GitHub : avec la méthode A, ouvrez le fichier sur GitHub, cliquez sur le crayon ✏️, modifiez, puis **Commit changes** ; avec la méthode B :
-
-   ```bash
-   git commit -am "Ajout de l'identifiant Firebase"
-   ```
-
-   ```bash
-   git push
-   ```
-
-Pour toute mise à jour future : modifiez les fichiers, puis relancez `firebase deploy --only hosting`.
+1. Votre application est à l'adresse **`https://VOTRE-ID-DE-PROJET.web.app`** (par exemple `https://resolveur-irritants-4f2a1.web.app`). L'adresse `https://VOTRE-ID-DE-PROJET.firebaseapp.com` fonctionne aussi.
+   Vous la retrouvez aussi dans la console Firebase, rubrique **Hosting**.
+2. Ouvrez-la : l'écran « Résolveur d'irritants » s'affiche, avec **Groq** déjà sélectionné.
+3. Collez votre clé `gsk_…`, cliquez sur **Tester la clé** : le message « Clé valide » doit apparaître.
+4. Cliquez sur **Commencer**, puis sur l'un des exemples d'irritants. L'assistant doit répondre en quelques secondes.
+5. Ajoutez l'adresse à vos favoris et partagez-la avec vos utilisateurs.
 
 ---
 
-## Étape 6 — Déploiement automatique depuis GitHub (facultatif, 10 min)
+## Étape 7 — Modifier l'application plus tard
 
-Objectif : chaque modification envoyée sur GitHub met le site à jour sans relancer `firebase deploy`.
+Toute modification enregistrée sur GitHub est publiée automatiquement en une à deux minutes.
 
-Prérequis : avoir suivi la méthode B de l'étape 2 (dépôt Git local relié à GitHub).
+1. Dans le dépôt, naviguez jusqu'au fichier à modifier (par exemple `public/js/prompt.js`).
+2. Cliquez sur l'icône crayon ✏️ (**Edit this file**).
+3. Faites votre modification, puis cliquez sur **Commit changes…** › **Commit changes**.
+4. Suivez la publication dans l'onglet **Actions** (coche verte = en ligne).
+5. Rechargez l'application avec **Ctrl + F5** (Windows) ou **Cmd + Maj + R** (Mac) pour voir la nouvelle version.
 
-1. Dans le terminal, depuis le dossier `agent-irritants` :
-
-   ```bash
-   firebase init hosting:github
-   ```
-
-2. Répondez aux questions :
-   - Autoriser l'accès à GitHub : une page s'ouvre, acceptez.
-   - **For which GitHub repository would you like to set up a GitHub workflow?** → `VOTRE-COMPTE/agent-irritants`
-   - **Set up the workflow to run a build script before every deploy?** → **No** (il n'y a rien à compiler)
-   - **Set up automatic deployment to your site's live channel when a PR is merged?** → **Yes**
-   - **What is the name of the GitHub branch associated with your site's live channel?** → `main`
-
-   Firebase enregistre automatiquement un secret dans votre dépôt GitHub et crée deux fichiers dans `.github/workflows/`.
-3. Envoyez ces fichiers sur GitHub :
-
-   ```bash
-   git add .github
-   ```
-
-   ```bash
-   git commit -m "Déploiement automatique Firebase"
-   ```
-
-   ```bash
-   git push
-   ```
-
-4. Sur GitHub, onglet **Actions** : vous voyez le déploiement s'exécuter. Désormais, chaque `git push` sur `main` (ou chaque modification faite directement sur le site GitHub) publie la nouvelle version.
+> **Revenir en arrière** : chaque modification est conservée dans l'historique du fichier (bouton **History**). Vous pouvez y recopier une ancienne version et l'enregistrer.
 
 ---
 
-## Étape 7 — Adresse personnalisée (facultatif)
+## Étape 8 — Adresse personnalisée (facultatif)
 
-Pour utiliser une adresse comme `irritants.mon-entreprise.fr` : console Firebase › **Hosting** › **Ajouter un domaine personnalisé**, puis suivez les instructions (ajout d'enregistrements DNS chez votre hébergeur de domaine). Le certificat HTTPS est fourni gratuitement.
+Pour utiliser une adresse comme `irritants.mon-entreprise.fr` : console Firebase › **Hosting** › **Ajouter un domaine personnalisé**, puis suivez les instructions (ajout d'enregistrements DNS chez le gestionnaire de votre nom de domaine). Le certificat HTTPS est fourni gratuitement.
 
 ---
 
-## Étape 8 — Ce que vos utilisateurs doivent faire
+## Étape 9 — Ce que vos utilisateurs doivent faire
 
 Envoyez-leur l'adresse du site et ces consignes.
 
-### 1. Obtenir une clé API
+### 1. Créer sa clé Groq
 
-| Fournisseur | Où créer la clé | Remarque |
-|---|---|---|
-| OpenAI | <https://platform.openai.com/api-keys> | Ajouter un moyen de paiement dans *Billing*. L'abonnement ChatGPT Plus **n'inclut pas** l'API. |
-| Anthropic (Claude) | <https://console.anthropic.com/settings/keys> | Acheter des crédits dans *Billing*. L'abonnement Claude.ai **n'inclut pas** l'API. |
-| Google (Gemini) | <https://aistudio.google.com/app/apikey> | Offre gratuite avec limites ; vos échanges peuvent alors servir à améliorer les modèles de Google. |
-| Mistral AI | <https://console.mistral.ai/api-keys> | Fournisseur français ; offre d'essai disponible. |
-| Groq | <https://console.groq.com/keys> | Très rapide, offre gratuite limitée. |
-| OpenRouter | <https://openrouter.ai/keys> | Une seule clé pour accéder à des centaines de modèles. |
+Chaque utilisateur suit la procédure « Créer votre clé API Groq » de l'Étape 0 : compte gratuit sur <https://console.groq.com>, puis **API Keys › Create API Key**, et copie de la clé `gsk_…` dès sa création.
 
-### 2. Fixer un plafond de dépense
+### 2. Comprendre les limites de Groq
 
-Chez chaque fournisseur, dans la rubrique facturation (*Billing*, *Limits*, *Usage*), définir une limite mensuelle (par exemple 10 €). Une conversation coûte en général quelques centimes.
+- **Formule gratuite** : pas de carte bancaire, mais un nombre limité de requêtes et de « tokens » (morceaux de texte) **par minute et par jour**. À titre indicatif, pour `openai/gpt-oss-120b` : environ 30 requêtes et 8 000 tokens par minute, 1 000 requêtes par jour. Les valeurs à jour de votre compte se trouvent dans la console Groq, rubrique **Settings › Limits**.
+- **En pratique** : une conversation normale tient sans problème. Les limites se font sentir si l'on enchaîne les messages très vite ou si la conversation devient très longue (tout l'historique est renvoyé à chaque message). Dans ce cas : patienter une minute, ou cliquer sur **Nouvelle conversation** après avoir exporté la précédente.
+- **Formule payante (Developer)** : limites beaucoup plus élevées, facturation à l'usage (quelques centimes par conversation). Si vous l'activez, fixez un plafond de dépense dans les réglages de facturation de la console Groq.
 
-### 3. Utiliser l'application
+### 3. Choisir le modèle
 
-1. Ouvrir le site, choisir le fournisseur, coller la clé.
-2. Cliquer sur **Tester la clé** : la liste des modèles disponibles apparaît dans le champ **Modèle**. Garder celui proposé par défaut ou en choisir un autre.
+Le champ **Modèle** propose `openai/gpt-oss-120b` par défaut. Après **Tester la clé**, la liste affiche tous les modèles de conversation disponibles pour la clé.
+
+| Modèle | Usage conseillé |
+|---|---|
+| `openai/gpt-oss-120b` | **Recommandé.** Le plus solide pour analyser un irritant et construire un plan d'action. |
+| `openai/gpt-oss-20b` | Plus léger et plus rapide ; bon compromis si les limites de la formule gratuite gênent. |
+| `llama-3.3-70b-versatile` | Alternative fiable, bonne qualité de rédaction en français. |
+| `llama-3.1-8b-instant` | Très rapide mais moins précis : pour des échanges simples. |
+| `qwen/qwen3.8-27b` | Modèle « en préversion » chez Groq : il peut disparaître sans préavis. |
+
+> Les modèles évoluent régulièrement chez Groq. Si un modèle renvoie « Modèle introuvable », cliquez sur **Tester la clé** et choisissez-en un dans la liste à jour.
+
+### 4. Utiliser l'application
+
+1. Ouvrir le site : **Groq** est déjà sélectionné. Coller sa clé `gsk_…`.
+2. Cliquer sur **Tester la clé** : le message « Clé valide » apparaît et la liste des modèles se remplit dans le champ **Modèle**. Garder celui proposé par défaut ou en choisir un autre.
 3. Indiquer éventuellement son activité (ex. « assistante de direction dans une collectivité ») pour des réponses mieux adaptées.
 4. Cocher **Mémoriser ma clé sur cet appareil** uniquement sur un ordinateur personnel.
 5. Cliquer sur **Commencer**, décrire l'irritant, répondre aux questions de l'assistant.
 6. **Exporter** permet de récupérer la conversation (plan d'action compris) dans un fichier `.md` lisible avec n'importe quel éditeur de texte.
 
+### 5. Autres fournisseurs (si besoin)
+
+L'application accepte aussi d'autres fournisseurs, à choisir dans la liste **Fournisseur d'IA** :
+
+| Fournisseur | Où créer la clé | Remarque |
+|---|---|---|
+| OpenAI | <https://platform.openai.com/api-keys> | Payant à l'usage. L'abonnement ChatGPT Plus **n'inclut pas** l'API. |
+| Anthropic (Claude) | <https://console.anthropic.com/settings/keys> | Payant à l'usage. L'abonnement Claude.ai **n'inclut pas** l'API. |
+| Google (Gemini) | <https://aistudio.google.com/app/apikey> | Offre gratuite avec limites ; les échanges peuvent alors servir à améliorer les modèles de Google. |
+| Mistral AI | <https://console.mistral.ai/api-keys> | Fournisseur français, hébergement en Europe. |
+| OpenRouter | <https://openrouter.ai/keys> | Une seule clé pour accéder à des centaines de modèles. |
+
 ---
 
 ## Sécurité et confidentialité : ce qu'il faut savoir
 
-- **La clé ne quitte le navigateur que pour aller chez le fournisseur.** Il n'y a ni serveur ni base de données dans cette application : vous, en tant qu'hébergeur, ne voyez ni les clés ni les conversations.
+- **La clé Groq ne quitte le navigateur que pour aller chez Groq.** Il n'y a ni serveur ni base de données dans cette application : vous, en tant qu'hébergeur, ne voyez ni les clés ni les conversations.
 - **Stockage** : sans la case « Mémoriser », la clé est gardée dans l'onglet et effacée à sa fermeture. Avec la case, elle reste dans le navigateur de l'appareil jusqu'à ce que l'utilisateur la retire (Paramètres › décocher › Commencer) ou vide les données du site.
+- **Clé de déploiement** : le compte de service `github-deploiement` ne sert qu'à publier le site. Il est rangé dans les secrets chiffrés de GitHub. Si vous pensez qu'il a fuité, supprimez sa clé dans Google Cloud (onglet **Clés**), créez-en une nouvelle et remplacez le secret `FIREBASE_SERVICE_ACCOUNT`.
+- **Accès au dépôt** : toute personne ayant le droit de modifier le dépôt GitHub peut modifier le site. N'invitez que des personnes de confiance (**Settings › Collaborators**).
 - **En-têtes de sécurité** : `firebase.json` impose une politique (CSP) qui n'autorise le site à contacter que les six fournisseurs prévus, interdit l'exécution de scripts externes et empêche l'intégration du site dans une autre page.
 - **Les réponses de l'IA sont affichées sans exécuter de HTML**, ce qui évite qu'un contenu malveillant s'exécute dans la page.
-- **Données sensibles** : rappelez à vos utilisateurs d'anonymiser noms de clients, données personnelles et chiffres confidentiels. Les messages sont traités par le fournisseur choisi selon ses propres conditions (vérifier notamment la politique de conservation des données et la localisation des serveurs si le RGPD est un enjeu ; Mistral AI héberge en Europe).
+- **Données sensibles** : rappelez à vos utilisateurs d'anonymiser noms de clients, données personnelles et chiffres confidentiels. Les messages sont traités par Groq (ou le fournisseur choisi) selon ses propres conditions : consultez la politique de confidentialité et de conservation des données de Groq (<https://groq.com/privacy-policy>) et vérifiez la localisation des serveurs si le RGPD est un enjeu pour votre organisation.
 - **Poste partagé** : ne pas cocher « Mémoriser » sur un ordinateur partagé.
 
 ---
 
 ## Personnaliser l'agent
 
+Toutes ces modifications se font sur GitHub avec le crayon ✏️ (voir Étape 7).
+
 | Je veux… | Fichier à modifier |
 |---|---|
 | Changer la méthode, le ton, les règles de l'assistant | `public/js/prompt.js` (fonction `buildSystemPrompt`) |
 | Changer les exemples d'irritants affichés à l'accueil | `public/js/prompt.js` (liste `EXAMPLES`) |
-| Changer le modèle proposé par défaut pour un fournisseur | `public/js/providers.js` (`defaultModel`) |
-| Changer les couleurs | `public/css/style.css` (variables en haut du fichier, `--accent` notamment) |
+| Changer le modèle Groq proposé par défaut | `public/js/providers.js` (bloc `groq`, ligne `defaultModel`) |
+| Proposer un autre fournisseur par défaut | `public/js/providers.js` : le premier bloc de la liste est celui sélectionné à l'ouverture |
+| Changer les couleurs | `public/css/style.css` (variables en haut du fichier) |
 | Changer les textes de l'interface | `public/index.html` |
-
-Après chaque modification : `firebase deploy --only hosting` (ou `git push` si l'étape 6 est en place). Si l'ancienne version s'affiche encore, rechargez la page avec **Cmd + Maj + R** (Mac) ou **Ctrl + F5** (Windows).
 
 > **Ajouter un autre fournisseur** : il faut l'ajouter dans `providers.js` **et** ajouter son adresse dans la directive `connect-src` de `firebase.json`, sinon le navigateur bloquera les appels.
 
@@ -282,36 +296,29 @@ Après chaque modification : `firebase deploy --only hosting` (ou `git push` si 
 
 ## Dépannage
 
+### La mise en ligne échoue (croix rouge dans l'onglet Actions)
+
+Cliquez sur la ligne en échec, puis sur l'étape rouge pour lire le message.
+
+| Message ou symptôme | Cause probable | Solution |
+|---|---|---|
+| `Input required and not supplied: firebaseServiceAccount` | Secret absent ou mal nommé | Étape 4.1 : le nom doit être exactement `FIREBASE_SERVICE_ACCOUNT`. Puis **Run workflow**. |
+| `Failed to authenticate` ou JSON invalide | Contenu du secret incomplet | Recréer le secret en collant **tout** le fichier `.json`, de `{` à `}`. |
+| `No project active` ou projet introuvable | Variable absente, mal nommée ou erronée | Étape 4.2 : nom `FIREBASE_PROJECT_ID`, valeur = identifiant exact du projet (Paramètres du projet Firebase). |
+| `HTTP Error: 403` ou `permission denied` | Rôles manquants sur le compte de service | Google Cloud › **IAM et administration › IAM** › crayon à côté de `github-deploiement` : vérifier les trois rôles de l'étape 2.1. |
+| `Hosting site not found` ou `404` | Hosting pas encore activé | Console Firebase › **Hosting** › **Commencer** (étape 1, point 6), puis **Run workflow**. |
+| Aucune ligne dans l'onglet Actions | Fichier `.github/workflows/deploy.yml` absent | Le créer depuis GitHub (encadré de l'étape 5). |
+| Bandeau « Workflows aren't being run on this repository » | Actions désactivées sur le dépôt | Cliquer sur le bouton proposé pour les activer, ou **Settings › Actions › General › Allow all actions**. |
+
+### L'application est en ligne mais quelque chose cloche
+
 | Symptôme | Cause probable | Solution |
 |---|---|---|
-| « Clé API invalide ou expirée (HTTP 401) » | Clé mal copiée, révoquée, ou d'un autre fournisseur | Recopier la clé sans espace ; vérifier le fournisseur sélectionné. |
-| « Limite d'utilisation atteinte (HTTP 429) » | Crédit épuisé ou trop de requêtes | Recharger le crédit chez le fournisseur ou patienter une minute. |
-| « Modèle introuvable » ou HTTP 400/404 | Nom de modèle inexistant ou non accessible avec cette clé | Cliquer sur **Tester la clé** et choisir un modèle de la liste. |
-| « Impossible de joindre le fournisseur » | Pas de connexion, réseau d'entreprise filtrant, ou fournisseur refusant les appels depuis un navigateur | Tester sur un autre réseau ; essayer via OpenRouter, qui accepte ces appels pour tous ses modèles. |
-| Page blanche après mise en ligne | Dossier `public` mal envoyé ou `firebase.json` absent | Vérifier que `public/index.html` et `public/js/app.js` existent bien ; relancer `firebase deploy --only hosting`. |
-| `firebase deploy` : « Invalid project id » | `.firebaserc` non modifié | Remplacer la valeur par l'identifiant exact (`firebase projects:list`). |
-| `firebase : command not found` | Outil non installé ou terminal ouvert avant l'installation | Fermer et rouvrir le terminal ; relancer `npm install -g firebase-tools`. |
-| L'ancienne version s'affiche | Cache du navigateur | Recharger avec Cmd + Maj + R / Ctrl + F5 (le cache des fichiers est limité à 5 minutes). |
-| Ça marche en local mais pas en ligne pour un nouveau fournisseur | Adresse non autorisée dans la CSP | Ajouter le domaine dans `connect-src` de `firebase.json`. |
-
----
-
-## Aide-mémoire des commandes
-
-```bash
-npx serve public
-```
-
-```bash
-firebase login
-```
-
-```bash
-firebase deploy --only hosting
-```
-
-```bash
-firebase hosting:channel:deploy test
-```
-
-La dernière commande publie une **version de test** à une adresse temporaire (valable 7 jours) sans toucher au site principal : pratique pour essayer une modification avant de la montrer à vos utilisateurs.
+| Page « Site Not Found » de Firebase | Première publication pas encore terminée ou en échec | Vérifier la coche verte dans **Actions** ; patienter quelques minutes. |
+| Page blanche | Dossier `public` incomplet sur GitHub | Vérifier que `public/index.html` et les fichiers de `public/js/` sont bien dans le dépôt. |
+| « Clé API invalide » avec Groq | Clé ne commençant pas par `gsk_`, ou clé supprimée dans la console | Vérifier dans <https://console.groq.com/keys> que la clé existe ; sinon en créer une nouvelle. |
+| « Limite d'utilisation atteinte (HTTP 429) » | Limite par minute ou par jour de la formule gratuite Groq dépassée | Patienter une minute (ou jusqu'au lendemain pour la limite journalière) ; passer à `openai/gpt-oss-20b` ou à la formule Developer. |
+| « Conversation trop longue… (HTTP 413) » | L'historique envoyé dépasse la limite de tokens par minute de la formule gratuite | Exporter la conversation, puis cliquer sur **Nouvelle conversation** en résumant l'essentiel. |
+| « Modèle introuvable » ou HTTP 400/404 | Nom de modèle inexistant ou retiré | Cliquer sur **Tester la clé** et choisir un modèle de la liste. |
+| « Impossible de joindre le fournisseur » | Pas de connexion ou réseau d'entreprise filtrant | Tester sur un autre réseau (par exemple le partage de connexion du téléphone) ; sinon demander au service informatique d'autoriser `api.groq.com`. |
+| L'ancienne version s'affiche après une modification | Cache du navigateur | Recharger avec Ctrl + F5 / Cmd + Maj + R (le cache des fichiers est limité à 5 minutes). |

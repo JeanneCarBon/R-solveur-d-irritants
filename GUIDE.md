@@ -18,6 +18,7 @@ Durée : environ 45 minutes la première fois. Coût : 0 € (le plan gratuit «
 | 4 | GitHub | Enregistrer la clé de déploiement et l'identifiant du projet |
 | 5 | GitHub | Déposer les fichiers : la mise en ligne démarre toute seule |
 | 6 | Navigateur | Ouvrir l'application et la tester avec Groq |
+| 10 | Firebase | *(Facultatif)* Ajouter la base de données des irritants et la page de suivi |
 
 ---
 
@@ -36,6 +37,7 @@ agent-irritants/
 │       └── deploy.yml      (la mise en ligne automatique)
 ├── public/                 (index.html, favicon.svg, css/, js/)
 ├── firebase.json
+├── firestore.rules         (règles de la base de données, étape 10)
 ├── .gitignore
 ├── GUIDE.md
 ├── Guide-mise-en-ligne.pdf
@@ -145,8 +147,8 @@ On donne à GitHub la clé de déploiement (en secret chiffré) et l'identifiant
 ## Étape 5 — Déposer les fichiers : la mise en ligne démarre (10 min)
 
 1. Revenez sur la page d'accueil du dépôt (onglet **Code**). Cliquez sur le lien **uploading an existing file** (ou **Add file › Upload files**).
-2. Affichez les fichiers cachés (voir Étape 0), ouvrez le dossier `agent-irritants` et glissez-déposez **tout son contenu** dans la page : le dossier `.github`, le dossier `public`, `firebase.json`, `.gitignore`, `GUIDE.md`, `Guide-mise-en-ligne.pdf`, `README.md`.
-3. Vérifiez la liste affichée : on doit y voir `.github/workflows/deploy.yml` ainsi que `public/index.html`, `public/css/style.css` et les quatre fichiers de `public/js/`.
+2. Affichez les fichiers cachés (voir Étape 0), ouvrez le dossier `agent-irritants` et glissez-déposez **tout son contenu** dans la page : le dossier `.github`, le dossier `public`, `firebase.json`, `firestore.rules`, `.gitignore`, `GUIDE.md`, `Guide-mise-en-ligne.pdf`, `README.md`.
+3. Vérifiez la liste affichée : on doit y voir `.github/workflows/deploy.yml` ainsi que `public/index.html`, `public/css/style.css` et les six fichiers de `public/js/`.
 4. En bas, dans **Commit changes**, écrivez « Première version » et cliquez sur **Commit changes**.
 
 GitHub lance aussitôt la mise en ligne. Pour la suivre :
@@ -329,13 +331,98 @@ L'application accepte aussi d'autres fournisseurs, à choisir dans la liste **Fo
 
 ---
 
+## Étape 10 — Base de données des irritants et boucle retour (25 min, facultatif)
+
+Cette étape ajoute deux choses :
+
+- **Pour vos utilisateurs** : sous la réponse de l'assistant, un bouton **« Partager mon irritant »**. L'IA résume la conversation en une **fiche anonyme** (catégorie, résumé, mots-clés, fréquence, impact, piste de solution). L'utilisateur la relit, la corrige, coche la case d'accord et l'envoie. Il peut laisser son e-mail s'il veut être prévenu du traitement.
+- **Pour vous** : une **page de suivi** réservée à votre compte Google, à l'adresse `https://VOTRE-ID-DE-PROJET.web.app/suivi`. Vous y voyez toutes les fiches, les catégories et mots-clés les plus cités, vous changez le statut de chaque fiche (Nouveau, En analyse, Action en cours, Traité, Écarté), vous notez l'action menée et vous exportez le tout vers Excel.
+
+Les fiches sont enregistrées dans **Firestore**, la base de données de Firebase, dans le même projet. Le plan gratuit suffit (20 000 fiches envoyées et 50 000 lectures par jour). Tant que cette étape n'est pas faite, le bouton de partage reste simplement caché.
+
+### 10.1 Créer la base de données
+
+1. Console Firebase › votre projet › menu de gauche **Créer › Firestore Database** (*Build › Firestore Database*) › **Créer une base de données**.
+2. Si Firebase demande une **édition**, choisissez **Standard**. Laissez l'identifiant de la base à `(default)`.
+3. **Emplacement** : choisissez une région **en Europe**, par exemple **`eur3 (Europe)`** ou **`europe-west9 (Paris)`**. ⚠️ Ce choix est **définitif** et compte pour le RGPD.
+4. **Règles de sécurité** : choisissez **Démarrer en mode production** (tout est fermé ; vous collerez les vraies règles à l'étape 10.4). Cliquez sur **Créer**.
+
+### 10.2 Activer la connexion Google (pour votre page de suivi)
+
+1. Menu de gauche **Créer › Authentication** › **Commencer**.
+2. Onglet **Mode de connexion** (*Sign-in method*) › **Google** › activez l'interrupteur, choisissez votre adresse e-mail d'assistance › **Enregistrer**.
+3. Onglet **Paramètres** (*Settings*) › **Domaines autorisés** : `VOTRE-ID-DE-PROJET.web.app` et `VOTRE-ID-DE-PROJET.firebaseapp.com` y figurent déjà. Si vous avez un **nom de domaine personnalisé** (étape 8), cliquez sur **Ajouter un domaine** et saisissez-le (par exemple `irritants.mon-entreprise.fr`).
+
+### 10.3 Déclarer l'application Web
+
+1. Roue dentée ⚙️ en haut à gauche › **Paramètres du projet** › onglet **Général**.
+2. Tout en bas, section **Vos applications**, cliquez sur l'icône **`</>`** (Web).
+3. **Surnom de l'application** : `resolveur-irritants`. Ne cochez **pas** « Configurer également Firebase Hosting ». Cliquez sur **Enregistrer l'application**.
+4. Firebase affiche un bloc de code : **vous n'avez rien à copier**. Cliquez sur **Continuer vers la console**. L'application récupère cette configuration toute seule.
+
+### 10.4 Coller les règles de sécurité
+
+Les règles protègent la base : **tout le monde peut déposer une fiche, mais personne ne peut les lire, sauf vous.**
+
+1. Sur votre ordinateur, ouvrez le fichier **`firestore.rules`** du dossier `agent-irritants` avec un éditeur de texte (Mac : clic droit › **Ouvrir avec › TextEdit** ; Windows : clic droit › **Ouvrir avec › Bloc-notes**). Sélectionnez tout et copiez.
+2. Console Firebase › **Firestore Database** › onglet **Règles**. Effacez tout le contenu affiché, puis collez.
+3. Dans le texte collé, repérez `'VOTRE-ADRESSE@gmail.com'` et remplacez-le par **l'adresse de votre compte Google**, **en minuscules**, en gardant les apostrophes. Exemple : `'marie.dupont@gmail.com'`.
+   Pour autoriser plusieurs personnes : `['marie.dupont@gmail.com', 'paul.martin@gmail.com']`.
+4. Cliquez sur **Publier**. Si un message rouge apparaît, vérifiez les apostrophes autour de l'adresse.
+
+> Faites ce remplacement **uniquement dans la console**, pas dans le fichier `firestore.rules` déposé sur GitHub : ainsi votre adresse n'apparaît pas dans le dépôt.
+
+### 10.5 Déposer les nouveaux fichiers sur GitHub
+
+1. Dans votre dépôt GitHub (onglet **Code**), cliquez sur **Add file › Upload files**.
+2. Glissez-déposez depuis le dossier `agent-irritants` : le dossier **`public`** entier, **`firebase.json`**, **`firestore.rules`**, **`GUIDE.md`**, **`Guide-mise-en-ligne.pdf`** et **`README.md`**. Les fichiers existants sont remplacés.
+3. Cliquez sur **Commit changes**, puis attendez la **coche verte** dans l'onglet **Actions**.
+
+### 10.6 Compléter la page de confidentialité
+
+Le RGPD impose d'informer les utilisateurs. La page `confidentialite.html` est prête ; il reste deux informations à compléter.
+
+1. Sur GitHub, ouvrez `public/confidentialite.html` › crayon ✏️.
+2. Remplacez **`[Nom de votre organisation]`** (crochets compris) par le nom de votre structure, et **`[adresse e-mail de contact]`** par l'adresse à laquelle les utilisateurs peuvent exercer leurs droits.
+3. La durée de conservation est fixée à **24 mois** : modifiez-la si votre organisation a une autre règle.
+4. **Commit changes**.
+
+### 10.7 Tester
+
+1. Ouvrez l'application (rechargez avec **Cmd + Maj + R** ou **Ctrl + F5**), décrivez un irritant et attendez la réponse.
+2. Sous la réponse, cliquez sur **Partager mon irritant**. Après quelques secondes, la fiche se remplit. Relisez-la, cochez la case d'accord, cliquez sur **Envoyer la fiche** : le message « Merci ! » s'affiche.
+3. Ouvrez **`https://VOTRE-ID-DE-PROJET.web.app/suivi`** (ou `/suivi` derrière votre nom de domaine) et ajoutez-la à vos favoris.
+4. Cliquez sur **Se connecter avec Google**, choisissez le compte indiqué dans les règles : la fiche apparaît.
+
+### 10.8 Faire vivre la boucle retour
+
+| Statut | Signification |
+|---|---|
+| **Nouveau** | Fiche reçue, pas encore regardée |
+| **En analyse** | Vous étudiez l'irritant, vous le rapprochez d'autres fiches |
+| **Action en cours** | Une solution est lancée |
+| **Traité** | L'irritant est résolu |
+| **Écarté** | Hors périmètre ou non retenu (expliquez pourquoi dans le commentaire) |
+
+Une routine simple, par exemple chaque mois :
+
+1. Cliquez sur **Nouveau** pour voir les fiches arrivées.
+2. Regardez le tableau **Catégories** et les **Mots-clés les plus cités** : cliquez sur un mot-clé pour regrouper les fiches qui se ressemblent.
+3. Décidez des actions, passez les fiches au bon statut et notez l'action dans **Votre commentaire**, puis **Enregistrer**.
+4. Quand une fiche est **Traitée**, cliquez sur l'adresse e-mail (si l'utilisateur en a laissé une) pour le prévenir : c'est ce qui boucle la boucle.
+5. **Exporter (Excel)** produit un fichier à ouvrir dans Excel pour vos comités ou vos bilans (l'export respecte les filtres affichés).
+6. Supprimez les fiches de plus de 24 mois (bouton **Supprimer**), comme annoncé dans la page de confidentialité.
+
+---
+
 ## Sécurité et confidentialité : ce qu'il faut savoir
 
-- **La clé Groq ne quitte le navigateur que pour aller chez Groq.** Il n'y a ni serveur ni base de données dans cette application : vous, en tant qu'hébergeur, ne voyez ni les clés ni les conversations.
+- **La clé Groq ne quitte le navigateur que pour aller chez Groq.** Vous, en tant qu'hébergeur, ne voyez ni les clés ni les conversations. Seules les **fiches anonymes** que les utilisateurs choisissent de partager sont enregistrées (Étape 10).
+- **Base de données** : les règles de sécurité n'autorisent que le dépôt de fiches complètes et de taille limitée. Personne ne peut lire, modifier ou supprimer une fiche, sauf les comptes Google inscrits dans les règles.
 - **Stockage** : sans la case « Mémoriser », la clé est gardée dans l'onglet et effacée à sa fermeture. Avec la case, elle reste dans le navigateur de l'appareil jusqu'à ce que l'utilisateur la retire (Paramètres › décocher › Commencer) ou vide les données du site.
 - **Clé de déploiement** : le compte de service `github-deploiement` ne sert qu'à publier le site. Il est rangé dans les secrets chiffrés de GitHub. Si vous pensez qu'il a fuité, supprimez sa clé dans Google Cloud (onglet **Clés**), créez-en une nouvelle et remplacez le secret `FIREBASE_SERVICE_ACCOUNT`.
 - **Accès au dépôt** : toute personne ayant le droit de modifier le dépôt GitHub peut modifier le site. N'invitez que des personnes de confiance (**Settings › Collaborators**).
-- **En-têtes de sécurité** : `firebase.json` impose une politique (CSP) qui n'autorise le site à contacter que les six fournisseurs prévus, interdit l'exécution de scripts externes et empêche l'intégration du site dans une autre page.
+- **En-têtes de sécurité** : `firebase.json` impose une politique (CSP) qui n'autorise le site à contacter que les six fournisseurs prévus et les services Firebase (base de données, connexion Google), interdit l'exécution de scripts venant d'autres sites et empêche l'intégration du site dans une autre page.
 - **Les réponses de l'IA sont affichées sans exécuter de HTML**, ce qui évite qu'un contenu malveillant s'exécute dans la page.
 - **Données sensibles** : rappelez à vos utilisateurs d'anonymiser noms de clients, données personnelles et chiffres confidentiels. Les messages sont traités par Groq (ou le fournisseur choisi) selon ses propres conditions : consultez la politique de confidentialité et de conservation des données de Groq (<https://groq.com/privacy-policy>) et vérifiez la localisation des serveurs si le RGPD est un enjeu pour votre organisation.
 - **Poste partagé** : ne pas cocher « Mémoriser » sur un ordinateur partagé.
@@ -354,6 +441,9 @@ Toutes ces modifications se font sur GitHub avec le crayon ✏️ (voir Étape 7
 | Proposer un autre fournisseur par défaut | `public/js/providers.js` : le premier bloc de la liste est celui sélectionné à l'ouverture |
 | Changer les couleurs | `public/css/style.css` (variables en haut du fichier) |
 | Changer les textes de l'interface | `public/index.html` |
+| Changer les catégories des fiches | `public/js/prompt.js` (liste `CATEGORIES`) |
+| Changer la façon dont l'IA résume la fiche | `public/js/prompt.js` (fonction `buildFichePrompt`) |
+| Compléter la page de confidentialité | `public/confidentialite.html` (étape 10.6) |
 
 > **Ajouter un autre fournisseur** : il faut l'ajouter dans `providers.js` **et** ajouter son adresse dans la directive `connect-src` de `firebase.json`, sinon le navigateur bloquera les appels.
 
@@ -390,4 +480,12 @@ Sur la page de la mise en ligne en échec, regardez le cadre **Annotations** : i
 | « Conversation trop longue… (HTTP 413) » | L'historique envoyé dépasse la limite de tokens par minute de la formule gratuite | Exporter la conversation, puis cliquer sur **Nouvelle conversation** en résumant l'essentiel. |
 | « Modèle introuvable » ou HTTP 400/404 | Nom de modèle inexistant ou retiré | Cliquer sur **Tester la clé** et choisir un modèle de la liste. |
 | « Impossible de joindre le fournisseur » | Pas de connexion ou réseau d'entreprise filtrant | Tester sur un autre réseau (par exemple le partage de connexion du téléphone) ; sinon demander au service informatique d'autoriser `api.groq.com`. |
+| Le bouton « Partager mon irritant » n'apparaît pas | Application Web non déclarée, ou ancienne version en cache | Étape 10.3 ; puis recharger avec Ctrl + F5 / Cmd + Maj + R. Le bouton n'apparaît qu'après la première réponse de l'assistant. |
+| « La fiche n'a pas pu être préparée automatiquement » | Limite Groq atteinte ou réponse illisible du modèle | Remplir la fiche à la main, ou patienter une minute et recommencer. |
+| « La base de données n'est pas encore créée » | Firestore pas créé | Étape 10.1. |
+| « Accès refusé par les règles de sécurité » à l'envoi d'une fiche | Règles non publiées ou mal collées | Étape 10.4 : recoller tout le fichier `firestore.rules` et **Publier**. |
+| Page de suivi : « Le compte … n'a pas accès aux fiches » | Adresse absente des règles, ou écrite avec des majuscules | Étape 10.4 : vérifier l'adresse, en minuscules, entre apostrophes, puis **Publier**. |
+| Page de suivi : « Cette adresse n'est pas autorisée pour la connexion » | Domaine absent des domaines autorisés | Étape 10.2, point 3 : ajouter le domaine affiché dans la barre d'adresse. |
+| Page de suivi : « La connexion Google n'est pas activée » | Fournisseur Google désactivé | Étape 10.2, points 1 et 2. |
+| La fenêtre de connexion Google ne s'ouvre pas | Fenêtres surgissantes bloquées | Autoriser les fenêtres surgissantes (pop-ups) pour ce site dans le navigateur. |
 | L'ancienne version s'affiche après une modification | Cache du navigateur | Recharger avec Ctrl + F5 / Cmd + Maj + R (le cache des fichiers est limité à 5 minutes). |

@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// Règles de sécurité de la base de données des irritants.
+// À COLLER dans la console Firebase : Firestore Database › onglet Règles › Publier (étape 10.4 du guide).
+// Remplacez VOTRE-ADRESSE@gmail.com par l'adresse de VOTRE compte Google, en minuscules,
+// uniquement dans la console (pas dans ce fichier, qui est visible sur GitHub).
+// Pour autoriser plusieurs personnes : ['adresse1@gmail.com', 'adresse2@gmail.com']
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['VOTRE-ADRESSE@gmail.com'];
+    }
+
+    function texte(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    // Vérifie qu'une nouvelle fiche est complète, raisonnable et anonyme par défaut.
+    function ficheValide(d) {
+      return d.keys().hasOnly(['categorie', 'resume', 'motsCles', 'frequence', 'impact', 'piste',
+                               'activite', 'avis', 'email', 'statut', 'commentaire', 'consentement', 'createdAt'])
+        && d.keys().hasAll(['categorie', 'resume', 'motsCles', 'frequence', 'impact', 'piste',
+                            'activite', 'avis', 'email', 'statut', 'commentaire', 'consentement', 'createdAt'])
+        && texte(d.categorie, 60) && d.categorie.size() > 0
+        && texte(d.resume, 1500) && d.resume.size() > 0
+        && d.motsCles is list && d.motsCles.size() <= 8
+        && texte(d.frequence, 200)
+        && texte(d.impact, 300)
+        && texte(d.piste, 800)
+        && texte(d.activite, 200)
+        && d.avis in ['utile', 'pas_utile', '']
+        && texte(d.email, 200) && d.email.matches('^$|^[^@ ]+@[^@ ]+[.][^@ ]+$')
+        && d.statut == 'nouveau'
+        && d.commentaire == ''
+        && d.consentement == true
+        && d.createdAt == request.time;
+    }
+
+    match /irritants/{ficheId} {
+      // Tout le monde peut déposer une fiche, personne ne peut lire celles des autres.
+      allow create: if ficheValide(request.resource.data);
+
+      // Seul le compte autorisé consulte, met à jour le suivi et supprime.
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statut', 'commentaire', 'updatedAt'])
+        && request.resource.data.statut in ['nouveau', 'analyse', 'action', 'traite', 'ecarte']
+        && texte(request.resource.data.commentaire, 2000);
+    }
+  }
+}

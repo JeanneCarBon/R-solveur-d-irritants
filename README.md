@@ -8,7 +8,8 @@ Chaque utilisateur utilise **sa propre clé API** et choisit **son fournisseur**
 ## Fonctionnement
 
 - Application 100 % statique (HTML, CSS, JavaScript), hébergée sur Firebase Hosting.
-- Aucun serveur, aucune base de données : la clé API reste dans le navigateur et part **directement** chez le fournisseur choisi.
+- Aucun serveur : la clé API reste dans le navigateur et part **directement** chez le fournisseur choisi.
+- Partage facultatif d'une **fiche irritant anonyme** (avec consentement) dans Firestore, et **page de suivi** réservée (`/suivi`, connexion Google) pour traiter les irritants en boucle retour : statuts, commentaires, mots-clés, export Excel.
 - L'agent suit une méthode en 5 étapes : comprendre, analyser les causes, proposer des solutions (gains rapides, moyen terme, structurel), plan d'action, indicateurs.
 - Réponses affichées en temps réel, bouton « Arrêter », export de la conversation en Markdown.
 
@@ -19,15 +20,20 @@ agent-irritants/
 ├── .github/workflows/
 │   └── deploy.yml          ← mise en ligne automatique sur Firebase à chaque modification
 ├── public/                 ← le site publié
-│   ├── index.html          ← page unique (configuration + conversation)
+│   ├── index.html          ← application (configuration + conversation + partage de fiche)
+│   ├── suivi.html          ← page de suivi des irritants (réservée)
+│   ├── confidentialite.html← politique de confidentialité (à compléter)
 │   ├── favicon.svg
 │   ├── css/style.css
 │   └── js/
 │       ├── app.js          ← logique de l'interface
 │       ├── providers.js    ← connexion aux fournisseurs d'IA
-│       ├── prompt.js       ← consignes de l'agent (à personnaliser)
+│       ├── prompt.js       ← consignes de l'agent et catégories (à personnaliser)
+│       ├── firebase.js     ← connexion à la base de données
+│       ├── suivi.js        ← logique de la page de suivi
 │       └── markdown.js     ← mise en forme sécurisée des réponses
 ├── firebase.json           ← configuration d'hébergement + en-têtes de sécurité
+├── firestore.rules         ← règles de sécurité de la base (à coller dans la console)
 ├── .gitignore
 ├── GUIDE.md                ← guide de mise en ligne pas à pas
 ├── Guide-mise-en-ligne.pdf ← le même guide en PDF

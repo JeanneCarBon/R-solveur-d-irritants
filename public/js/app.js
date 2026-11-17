@@ -1,6 +1,7 @@
 import { PROVIDERS, chat, listModels } from "./providers.js";
 import { renderMarkdown } from "./markdown.js";
-import { buildSystemPrompt, EXAMPLES } from "./prompt.js";
+import { buildSystemPrompt, buildFichePrompt, CATEGORIES, EXAMPLES } from "./prompt.js";
+import { loadFirebaseConfig, saveFiche, firebaseMessage } from "./firebase.js";
 
 const $ = (s) => document.querySelector(s);
 const CONFIG_KEY = "irritants.config";
@@ -10,6 +11,8 @@ let config = null;
 let messages = [];
 let busy = false;
 let controller = null;
+let shareEnabled = false; // la base de données Firebase est-elle disponible ?
+let shared = false;       // fiche déjà envoyée pour cette conversation
 
 // ---------- Stockage (tout est protégé : le navigateur peut refuser) ----------
 function readStore(store, key) {
@@ -238,6 +241,7 @@ async function send(text) {
     setBusy(false);
     controller = null;
     saveHistory();
+    updateShare();
     input.focus();
   }
 }
@@ -284,6 +288,8 @@ $("#new-chat").addEventListener("click", () => {
   saveHistory();
   list.querySelectorAll(".msg").forEach((n) => n.remove());
   welcome.hidden = false;
+  shared = false;
+  updateShare();
   input.focus();
 });
 
@@ -306,13 +312,158 @@ $("#export").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
+// ---------- Partage d'une fiche irritant ----------
+const shareCta = $("#share-cta");
+const shareThanks = $("#share-thanks");
+const dialog = $("#share-dialog");
+const shareForm = $("#share-form");
+const shareFields = $("#share-fields");
+const shareStatus = $("#share-status");
+const shareError = $("#share-error");
+const shareSend = $("#share-send");
+const catSel = $("#f-categorie");
+let ficheController = null;
+
+for (const c of CATEGORIES) catSel.add(new Option(c, c));
+
+function updateShare() {
+  const answered = messages.some((m) => m.role === "assistant");
+  shareCta.hidden = !(shareEnabled && answered && !shared);
+  shareThanks.hidden = !(shareEnabled && shared && messages.length);
+  // Toujours en bas de la conversation
+  list.append(shareCta, shareThanks);
+}
+
+// Texte de la conversation envoyé à l'IA pour préparer la fiche (raccourci si très long).
+function transcript() {
+  const lines = messages.map((m) => `${m.role === "user" ? "UTILISATEUR" : "ASSISTANT"} :\n${m.content}`);
+  const first = lines[0].slice(0, 3000);
+  let rest = lines.slice(1).join("\n\n");
+  if (rest.length > 7000) rest = "[…]\n" + rest.slice(-7000);
+  return first + (rest ? "\n\n" + rest : "");
+}
+
+function parseFiche(text) {
+  const t = text.replace(/<think>[\s\S]*?(<\/think>|$)/g, "");
+  const start = t.indexOf("{");
+  const end = t.lastIndexOf("}");
+  if (start === -1 || end <= start) throw new Error("pas de JSON");
+  return JSON.parse(t.slice(start, end + 1));
+}
+
+const str = (v, max) => (typeof v === "string" ? v : "").trim().slice(0, max);
+
+function fillFiche(f) {
+  catSel.value = CATEGORIES.includes(f.categorie) ? f.categorie : "Autre";
+  $("#f-resume").value = str(f.resume, 1500);
+  $("#f-motscles").value = (Array.isArray(f.motsCles) ? f.motsCles : []).map((k) => str(k, 40)).filter(Boolean).slice(0, 8).join(", ");
+  $("#f-frequence").value = str(f.frequence, 200);
+  $("#f-impact").value = str(f.impact, 300);
+  $("#f-piste").value = str(f.piste, 800);
+}
+
+function showShareError(msg) { shareError.textContent = msg; shareError.hidden = false; }
+
+async function openShare() {
+  if (busy) return;
+  shareForm.reset();
+  shareError.hidden = true;
+  $("#f-activite").value = config.activity || "";
+  catSel.value = "Autre";
+  shareFields.disabled = true;
+  shareSend.disabled = true;
+  shareStatus.className = "hint";
+  shareStatus.textContent = "L'IA prépare votre fiche…";
+  dialog.showModal();
+
+  ficheController = new AbortController();
+  let acc = "";
+  try {
+    await chat(config.provider, {
+      apiKey: config.apiKey,
+      model: config.model,
+      system: buildFichePrompt(),
+      messages: [{ role: "user", content: `Voici la conversation à résumer :\n\n${transcript()}\n\nProduis maintenant la fiche JSON.` }],
+      signal: ficheController.signal,
+      onText: (t) => { acc += t; },
+    });
+    fillFiche(parseFiche(acc));
+    shareStatus.className = "hint ok";
+    shareStatus.textContent = "Fiche prête : relisez-la avant de l'envoyer.";
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    shareStatus.className = "hint bad";
+    shareStatus.textContent = "La fiche n'a pas pu être préparée automatiquement : remplissez-la vous-même.";
+  } finally {
+    ficheController = null;
+    if (dialog.open) {
+      shareFields.disabled = false;
+      shareSend.disabled = false;
+      $("#f-resume").focus();
+    }
+  }
+}
+
+function closeShare() {
+  ficheController?.abort();
+  dialog.close();
+}
+
+$("#share-open").addEventListener("click", openShare);
+$("#share-cancel").addEventListener("click", closeShare);
+dialog.addEventListener("cancel", () => ficheController?.abort());
+
+shareForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  shareError.hidden = true;
+  const resume = $("#f-resume").value.trim();
+  const email = $("#f-email").value.trim().toLowerCase();
+  if (!resume) { showShareError("Décrivez l'irritant en quelques phrases."); $("#f-resume").focus(); return; }
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showShareError("L'adresse e-mail ne semble pas valide (ou laissez le champ vide)."); $("#f-email").focus(); return; }
+  if (!$("#f-consent").checked) { showShareError("Cochez la case d'accord pour envoyer la fiche."); return; }
+
+  const fiche = {
+    categorie: catSel.value,
+    resume,
+    motsCles: [...new Set($("#f-motscles").value.split(/[,;]/).map((k) => k.trim().toLowerCase().slice(0, 40)).filter(Boolean))].slice(0, 8),
+    frequence: $("#f-frequence").value.trim(),
+    impact: $("#f-impact").value.trim(),
+    piste: $("#f-piste").value.trim(),
+    activite: $("#f-activite").value.trim(),
+    avis: shareForm.elements.avis.value,
+    email,
+  };
+
+  shareSend.disabled = true;
+  shareSend.textContent = "Envoi…";
+  try {
+    await saveFiche(fiche);
+    shared = true;
+    dialog.close();
+    updateShare();
+    scrollToEnd();
+  } catch (err) {
+    showShareError("La fiche n'a pas pu être envoyée. " + firebaseMessage(err));
+  } finally {
+    shareSend.disabled = false;
+    shareSend.textContent = "Envoyer la fiche";
+  }
+});
+
 // ---------- Démarrage ----------
 config = loadConfig();
 messages = readStore(sessionStorage, HISTORY_KEY) || [];
 if (config && config.apiKey && PROVIDERS[config.provider]) {
   showChat();
   renderHistory();
+  updateShare();
 } else {
   config = null;
   showSetup();
 }
+
+// Le partage n'apparaît que si la base de données Firebase est configurée.
+loadFirebaseConfig().then((cfg) => {
+  shareEnabled = !!cfg;
+  if (config) updateShare();
+});

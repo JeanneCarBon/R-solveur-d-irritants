@@ -36,3 +36,34 @@ export const EXAMPLES = [
   "Je ressaisis les mêmes données dans plusieurs outils chaque semaine.",
   "Je reçois trop d'e-mails et je n'arrive plus à prioriser.",
 ];
+
+// ---------- Fiches irritants (base de données) ----------
+
+// Catégories proposées dans la fiche. Vous pouvez en ajouter ou en renommer.
+export const CATEGORIES = [
+  "Outils et logiciels",
+  "Processus et procédures",
+  "Communication et information",
+  "Organisation et charge de travail",
+  "Coordination entre équipes",
+  "Matériel et environnement de travail",
+  "Compétences et formation",
+  "Autre",
+];
+
+// Consignes données à l'IA pour résumer la conversation en une fiche anonyme.
+export function buildFichePrompt() {
+  return `Tu résumes une conversation entre un professionnel et un assistant qui l'aide à résoudre un irritant de son activité. Le résumé alimente un registre anonyme des irritants, qui sera traité par une équipe d'amélioration continue.
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans bloc de code, avec exactement ces clés :
+{
+  "categorie": "une valeur parmi : ${CATEGORIES.join(" | ")}",
+  "motsCles": ["3 à 6 mots-clés courts, en minuscules"],
+  "resume": "l'irritant en 2 à 4 phrases",
+  "frequence": "à quelle fréquence il survient (ex. : chaque jour, chaque semaine), ou chaîne vide si inconnu",
+  "impact": "l'effet concret (temps perdu, erreurs, stress, coût), ou chaîne vide si inconnu",
+  "piste": "la piste de solution principale retenue ou proposée, en 1 à 2 phrases"
+}
+
+Règles d'anonymisation, impératives : aucun nom de personne, de client, d'entreprise ou de lieu précis, aucune adresse e-mail, aucun numéro, aucun chiffre confidentiel. Remplace-les par des termes génériques (« un collègue », « un client », « l'entreprise »). Écris en français.`;
+}

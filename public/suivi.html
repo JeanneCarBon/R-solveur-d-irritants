@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Suivi des irritants</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/suivi.js"></script>
+</head>
+<body>
+
+  <!-- CONNEXION -->
+  <main id="login" class="setup">
+    <div class="setup-card">
+      <div class="brand">
+        <img src="favicon.svg" alt="" width="40" height="40">
+        <div>
+          <h1>Suivi des irritants</h1>
+          <p class="muted">Espace réservé à la personne chargée de traiter les irritants.</p>
+        </div>
+      </div>
+      <p id="login-status" class="hint">Chargement…</p>
+      <p class="error" id="login-error" role="alert" hidden></p>
+      <button type="button" id="google-login" class="primary wide" hidden>Se connecter avec Google</button>
+      <p class="hint back"><a href="./">← Retour à l'application</a></p>
+    </div>
+  </main>
+
+  <!-- TABLEAU DE SUIVI -->
+  <div id="board" class="board" hidden>
+    <header class="topbar">
+      <div class="topbar-title">
+        <img src="favicon.svg" alt="" width="28" height="28">
+        <div>
+          <strong>Suivi des irritants</strong>
+          <span class="badge" id="user-badge"></span>
+        </div>
+      </div>
+      <nav class="topbar-actions">
+        <button type="button" id="refresh" class="ghost">Actualiser</button>
+        <button type="button" id="export-csv" class="ghost">Exporter (Excel)</button>
+        <button type="button" id="logout" class="ghost">Se déconnecter</button>
+      </nav>
+    </header>
+
+    <main class="board-main">
+      <p class="error" id="board-error" role="alert" hidden></p>
+
+      <section class="summary" aria-label="Répartition par statut">
+        <div id="status-filters" class="status-filters"></div>
+      </section>
+
+      <section class="filters" aria-label="Filtres">
+        <input id="search" type="search" placeholder="Rechercher un mot dans les fiches…">
+        <select id="filter-cat" aria-label="Catégorie"></select>
+      </section>
+
+      <div class="board-columns">
+        <section class="board-list">
+          <p id="count" class="muted"></p>
+          <div id="fiches"></div>
+        </section>
+
+        <aside class="board-side">
+          <h2>Catégories</h2>
+          <table class="side-table">
+            <thead><tr><th>Catégorie</th><th>Fiches</th></tr></thead>
+            <tbody id="cat-table"></tbody>
+          </table>
+          <h2>Mots-clés les plus cités</h2>
+          <p class="hint">Cliquez sur un mot-clé pour filtrer.</p>
+          <div id="keywords" class="keywords"></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <template id="fiche-tpl">
+    <article class="fiche">
+      <header class="fiche-head">
+        <span class="fiche-cat"></span>
+        <span class="fiche-date muted"></span>
+      </header>
+      <p class="fiche-resume"></p>
+      <dl class="fiche-details"></dl>
+      <div class="fiche-tags"></div>
+      <div class="fiche-edit">
+        <label>Statut <select class="fiche-statut"></select></label>
+        <label class="fiche-comment-label">Votre commentaire / action menée
+          <textarea class="fiche-comment" rows="2" maxlength="2000"></textarea>
+        </label>
+        <div class="fiche-actions">
+          <span class="fiche-saved hint" role="status"></span>
+          <button type="button" class="ghost fiche-delete">Supprimer</button>
+          <button type="button" class="primary fiche-save">Enregistrer</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <noscript><p class="noscript">Cette page a besoin de JavaScript.</p></noscript>
+</body>
+</html>

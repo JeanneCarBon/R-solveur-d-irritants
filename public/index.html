@@ -58,6 +58,7 @@
         <summary>Où va ma clé ?</summary>
         <p>Votre clé reste dans votre navigateur. Elle est envoyée uniquement au fournisseur choisi, directement, sans passer par un serveur de cette application. Sans la case « Mémoriser », elle est effacée à la fermeture de l'onglet.</p>
         <p>Les messages que vous écrivez sont traités par ce fournisseur et facturés sur votre compte. N'y mettez pas de données confidentielles ou personnelles non anonymisées.</p>
+        <p>Rien n'est enregistré par cette application, sauf si vous choisissez de partager une fiche anonyme de votre irritant. <a href="confidentialite.html">Politique de confidentialité</a></p>
       </details>
     </div>
   </main>
@@ -85,7 +86,71 @@
         <p class="muted">Décrivez la situation avec vos mots. L'assistant vous posera quelques questions, cherchera les causes, puis vous proposera des solutions et un plan d'action.</p>
         <div id="examples" class="examples"></div>
       </div>
+      <div id="share-cta" class="share-cta" hidden>
+        <p><strong>Faites remonter cet irritant.</strong> <span class="muted">Partagez une fiche anonyme pour qu'il soit recensé et traité.</span></p>
+        <button type="button" id="share-open" class="primary">Partager mon irritant</button>
+      </div>
+      <p id="share-thanks" class="share-thanks" hidden>Merci ! Votre fiche a bien été transmise.</p>
     </section>
+
+    <!-- FICHE IRRITANT À PARTAGER -->
+    <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title">
+      <form id="share-form" novalidate>
+        <h2 id="share-title">Partager mon irritant</h2>
+        <p class="muted">L'IA a résumé votre conversation en une fiche anonyme. Relisez-la, corrigez-la si besoin et retirez toute information personnelle ou confidentielle avant l'envoi.</p>
+        <p id="share-status" class="hint" role="status"></p>
+
+        <fieldset id="share-fields">
+          <label for="f-categorie">Catégorie</label>
+          <select id="f-categorie" required></select>
+
+          <label for="f-resume">L'irritant en quelques phrases</label>
+          <textarea id="f-resume" rows="4" maxlength="1500" required></textarea>
+
+          <label for="f-motscles">Mots-clés <span class="muted">(séparés par des virgules)</span></label>
+          <input id="f-motscles" maxlength="300">
+
+          <div class="field-pair">
+            <div>
+              <label for="f-frequence">Fréquence</label>
+              <input id="f-frequence" maxlength="200" placeholder="Ex. : chaque semaine">
+            </div>
+            <div>
+              <label for="f-impact">Impact</label>
+              <input id="f-impact" maxlength="300" placeholder="Ex. : 2 h perdues par semaine">
+            </div>
+          </div>
+
+          <label for="f-piste">Piste de solution retenue</label>
+          <textarea id="f-piste" rows="2" maxlength="800"></textarea>
+
+          <label for="f-activite">Activité <span class="muted">(facultatif)</span></label>
+          <input id="f-activite" maxlength="200">
+
+          <p class="label">Cette conversation vous a-t-elle aidé ?</p>
+          <div class="radio-row">
+            <label class="check"><input type="radio" name="avis" value="utile"> <span>Oui</span></label>
+            <label class="check"><input type="radio" name="avis" value="pas_utile"> <span>Non</span></label>
+            <label class="check"><input type="radio" name="avis" value="" checked> <span>Je ne sais pas encore</span></label>
+          </div>
+
+          <label for="f-email">Votre e-mail <span class="muted">(facultatif, pour être prévenu du traitement)</span></label>
+          <input id="f-email" type="email" maxlength="200" autocomplete="email">
+
+          <label class="check consent">
+            <input type="checkbox" id="f-consent">
+            <span>J'accepte que cette fiche soit enregistrée pour recenser et traiter les irritants. <a href="confidentialite.html" target="_blank" rel="noopener">En savoir plus</a></span>
+          </label>
+        </fieldset>
+
+        <p class="error" id="share-error" role="alert" hidden></p>
+
+        <div class="dialog-actions">
+          <button type="button" id="share-cancel" class="ghost">Annuler</button>
+          <button type="submit" id="share-send" class="primary">Envoyer la fiche</button>
+        </div>
+      </form>
+    </dialog>
 
     <form id="composer" class="composer">
       <textarea id="input" rows="1" placeholder="Décrivez votre irritant…" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne" required></textarea>

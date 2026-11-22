@@ -327,7 +327,8 @@ let ficheController = null;
 for (const c of CATEGORIES) catSel.add(new Option(c, c));
 
 function updateShare() {
-  const answered = messages.some((m) => m.role === "assistant");
+  // Le partage est proposé une fois les 3 solutions données (2e réponse de l'assistant).
+  const answered = messages.filter((m) => m.role === "assistant").length >= 2;
   shareCta.hidden = !(shareEnabled && answered && !shared);
   shareThanks.hidden = !(shareEnabled && shared && messages.length);
   // Toujours en bas de la conversation
@@ -359,7 +360,9 @@ function fillFiche(f) {
   $("#f-motscles").value = (Array.isArray(f.motsCles) ? f.motsCles : []).map((k) => str(k, 40)).filter(Boolean).slice(0, 8).join(", ");
   $("#f-frequence").value = str(f.frequence, 200);
   $("#f-impact").value = str(f.impact, 300);
-  $("#f-piste").value = str(f.piste, 800);
+  $("#f-sol-rapide").value = str(f.solutionRapide, 600);
+  $("#f-sol-orga").value = str(f.solutionOrga, 600);
+  $("#f-sol-ia").value = str(f.solutionIA, 600);
 }
 
 function showShareError(msg) { shareError.textContent = msg; shareError.hidden = false; }
@@ -428,9 +431,11 @@ shareForm.addEventListener("submit", async (e) => {
     motsCles: [...new Set($("#f-motscles").value.split(/[,;]/).map((k) => k.trim().toLowerCase().slice(0, 40)).filter(Boolean))].slice(0, 8),
     frequence: $("#f-frequence").value.trim(),
     impact: $("#f-impact").value.trim(),
-    piste: $("#f-piste").value.trim(),
+    solutionRapide: $("#f-sol-rapide").value.trim(),
+    solutionOrga: $("#f-sol-orga").value.trim(),
+    solutionIA: $("#f-sol-ia").value.trim(),
     activite: $("#f-activite").value.trim(),
-    avis: shareForm.elements.avis.value,
+    prefere: shareForm.elements.prefere.value,
     email,
   };
 

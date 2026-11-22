@@ -12,7 +12,9 @@ const STATUTS = {
   traite: "Traité",
   ecarte: "Écarté",
 };
-const AVIS = { utile: "Oui", pas_utile: "Non", "": "Non précisé" };
+// Solution jugée la plus utile par le collaborateur.
+const PREFERE = { rapide: "La solution rapide", orga: "La solution d'organisation", ia: "La solution avec l'IA", "": "Non précisé" };
+const prefereOf = (f) => PREFERE[f.prefere ?? ""] || "Non précisé";
 
 let fiches = [];
 let filters = { statut: "", cat: "", q: "" };
@@ -100,7 +102,7 @@ function matches(f) {
   if (filters.statut && f.statut !== filters.statut) return false;
   if (filters.cat && f.categorie !== filters.cat) return false;
   if (filters.q) {
-    const hay = [f.resume, f.piste, f.impact, f.frequence, f.activite, f.categorie, f.commentaire, ...(f.motsCles || [])]
+    const hay = [f.resume, f.solutionRapide, f.solutionOrga, f.solutionIA, f.piste, f.impact, f.frequence, f.activite, f.categorie, f.commentaire, ...(f.motsCles || [])]
       .join(" ").toLowerCase();
     if (!filters.q.split(/\s+/).every((w) => hay.includes(w))) return false;
   }
@@ -159,6 +161,18 @@ function renderSide() {
   });
   $("#cat-table").replaceChildren(...rows);
 
+  // Solutions préférées
+  const pref = Object.keys(PREFERE).filter((k) => k).map((k) => [PREFERE[k], fiches.filter((f) => f.prefere === k).length]);
+  $("#pref-table").replaceChildren(...pref.map(([label, n]) => {
+    const tr = document.createElement("tr");
+    const td1 = document.createElement("td");
+    const td2 = document.createElement("td");
+    td1.textContent = label;
+    td2.textContent = n;
+    tr.append(td1, td2);
+    return tr;
+  }));
+
   // Mots-clés
   const kw = new Map();
   for (const f of fiches) for (const k of f.motsCles || []) kw.set(k, (kw.get(k) || 0) + 1);
@@ -198,9 +212,12 @@ function renderFiche(f) {
   const dl = el.querySelector(".fiche-details");
   addDetail(dl, "Fréquence", f.frequence);
   addDetail(dl, "Impact", f.impact);
-  addDetail(dl, "Piste retenue", f.piste);
+  addDetail(dl, "Solution rapide", f.solutionRapide);
+  addDetail(dl, "Organisation", f.solutionOrga);
+  addDetail(dl, "Avec l'IA", f.solutionIA);
+  addDetail(dl, "Piste retenue", f.piste); // anciennes fiches
+  addDetail(dl, "Préférée", f.prefere ? prefereOf(f) : "");
   addDetail(dl, "Activité", f.activite);
-  addDetail(dl, "Conversation utile", AVIS[f.avis ?? ""]);
   if (f.email) addDetail(dl, "Contact", f.email, `mailto:${f.email}?subject=${encodeURIComponent("Votre irritant : suite donnée")}`);
 
   el.querySelector(".fiche-tags").replaceChildren(...(f.motsCles || []).map((k) => {
@@ -290,9 +307,11 @@ $("#export-csv").addEventListener("click", () => {
     ["Mots-clés", (f) => (f.motsCles || []).join(", ")],
     ["Fréquence", (f) => f.frequence],
     ["Impact", (f) => f.impact],
-    ["Piste retenue", (f) => f.piste],
+    ["Solution rapide", (f) => f.solutionRapide],
+    ["Solution d'organisation", (f) => f.solutionOrga],
+    ["Solution avec l'IA", (f) => f.solutionIA],
     ["Activité", (f) => f.activite],
-    ["Conversation utile", (f) => AVIS[f.avis ?? ""]],
+    ["Solution préférée", prefereOf],
     ["E-mail", (f) => f.email],
     ["Commentaire", (f) => f.commentaire],
   ];

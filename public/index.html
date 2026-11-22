@@ -83,11 +83,11 @@
     <section id="messages" class="messages" aria-live="polite">
       <div id="welcome" class="welcome">
         <h2>Quel irritant voulez-vous résoudre ?</h2>
-        <p class="muted">Décrivez la situation avec vos mots. L'assistant vous posera quelques questions, cherchera les causes, puis vous proposera des solutions et un plan d'action.</p>
+        <p class="muted">Décrivez la situation en une ou deux phrases. L'assistant vous pose <strong>3 questions</strong>, puis vous propose <strong>3 solutions</strong> : une rapide sans IA, une d'organisation et une avec l'IA. Vous pourrez ensuite faire remonter votre irritant en un clic.</p>
         <div id="examples" class="examples"></div>
       </div>
       <div id="share-cta" class="share-cta" hidden>
-        <p><strong>Faites remonter cet irritant.</strong> <span class="muted">Partagez une fiche anonyme pour qu'il soit recensé et traité.</span></p>
+        <p><strong>Faites remonter votre irritant.</strong> <span class="muted">Une fiche anonyme est préparée pour vous : relisez-la et envoyez-la pour qu'il soit étudié et traité.</span></p>
         <button type="button" id="share-open" class="primary">Partager mon irritant</button>
       </div>
       <p id="share-thanks" class="share-thanks" hidden>Merci ! Votre fiche a bien été transmise.</p>
@@ -97,7 +97,7 @@
     <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title">
       <form id="share-form" novalidate>
         <h2 id="share-title">Partager mon irritant</h2>
-        <p class="muted">L'IA a résumé votre conversation en une fiche anonyme. Relisez-la, corrigez-la si besoin et retirez toute information personnelle ou confidentielle avant l'envoi.</p>
+        <p class="muted">L'IA a résumé votre irritant et les 3 solutions en une fiche anonyme. Relisez-la, corrigez-la si besoin et retirez toute information personnelle ou confidentielle avant l'envoi.</p>
         <p id="share-status" class="hint" role="status"></p>
 
         <fieldset id="share-fields">
@@ -121,17 +121,24 @@
             </div>
           </div>
 
-          <label for="f-piste">Piste de solution retenue</label>
-          <textarea id="f-piste" rows="2" maxlength="800"></textarea>
+          <label for="f-sol-rapide">Solution rapide, sans IA</label>
+          <textarea id="f-sol-rapide" rows="2" maxlength="600"></textarea>
+
+          <label for="f-sol-orga">Solution d'organisation</label>
+          <textarea id="f-sol-orga" rows="2" maxlength="600"></textarea>
+
+          <label for="f-sol-ia">Solution avec l'IA</label>
+          <textarea id="f-sol-ia" rows="2" maxlength="600"></textarea>
 
           <label for="f-activite">Activité <span class="muted">(facultatif)</span></label>
           <input id="f-activite" maxlength="200">
 
-          <p class="label">Cette conversation vous a-t-elle aidé ?</p>
+          <p class="label">Quelle solution vous paraît la plus utile ?</p>
           <div class="radio-row">
-            <label class="check"><input type="radio" name="avis" value="utile"> <span>Oui</span></label>
-            <label class="check"><input type="radio" name="avis" value="pas_utile"> <span>Non</span></label>
-            <label class="check"><input type="radio" name="avis" value="" checked> <span>Je ne sais pas encore</span></label>
+            <label class="check"><input type="radio" name="prefere" value="rapide"> <span>La rapide</span></label>
+            <label class="check"><input type="radio" name="prefere" value="orga"> <span>L'organisation</span></label>
+            <label class="check"><input type="radio" name="prefere" value="ia"> <span>Avec l'IA</span></label>
+            <label class="check"><input type="radio" name="prefere" value="" checked> <span>Je ne sais pas</span></label>
           </div>
 
           <label for="f-email">Votre e-mail <span class="muted">(facultatif, pour être prévenu du traitement)</span></label>

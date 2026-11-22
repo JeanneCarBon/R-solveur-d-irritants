@@ -10,7 +10,7 @@ Chaque utilisateur utilise **sa propre clé API** et choisit **son fournisseur**
 - Application 100 % statique (HTML, CSS, JavaScript), hébergée sur Firebase Hosting.
 - Aucun serveur : la clé API reste dans le navigateur et part **directement** chez le fournisseur choisi.
 - Partage facultatif d'une **fiche irritant anonyme** (avec consentement) dans Firestore, et **page de suivi** réservée (`/suivi`, connexion Google) pour traiter les irritants en boucle retour : statuts, commentaires, mots-clés, export Excel.
-- L'agent suit une méthode en 5 étapes : comprendre, analyser les causes, proposer des solutions (gains rapides, moyen terme, structurel), plan d'action, indicateurs.
+- Déroulé court pour les collaborateurs : l'agent pose **3 questions**, puis propose **3 solutions** (une rapide sans IA, une d'organisation, une avec l'IA) et invite à partager la fiche de l'irritant.
 - Réponses affichées en temps réel, bouton « Arrêter », export de la conversation en Markdown.
 
 ## Arborescence

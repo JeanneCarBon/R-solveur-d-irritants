@@ -8,6 +8,15 @@ Durée : environ 45 minutes la première fois. Coût : 0 € (le plan gratuit «
 
 **Fournisseur d'IA retenu : Groq.** L'application propose Groq par défaut, avec le modèle `openai/gpt-oss-120b`. Groq offre une formule gratuite (avec des limites par minute et par jour) et répond très vite. Les autres fournisseurs (OpenAI, Claude, Gemini, Mistral, OpenRouter) restent disponibles dans la liste si un utilisateur en a besoin.
 
+### Comment se déroule une conversation
+
+L'agent est conçu pour que chaque collaborateur fasse remonter un irritant en **5 minutes** :
+
+1. Le collaborateur décrit son irritant en une ou deux phrases.
+2. L'assistant reformule et pose **3 questions** : fréquence et temps perdu, personnes et outils concernés, ce qui a déjà été essayé.
+3. Après les réponses, il propose **3 solutions** : une **rapide, sans IA** (à faire cette semaine), une **d'organisation** (dans le mois) et une **avec l'IA** (outil, usage concret, exemple de consigne).
+4. Il invite le collaborateur à **partager la fiche de son irritant** : un bouton prépare une fiche anonyme, que le collaborateur relit et envoie (étape 10).
+
 ### Vue d'ensemble
 
 | Étape | Où | Ce que vous faites |
@@ -255,7 +264,7 @@ jobs:
    Vous la retrouvez aussi dans la console Firebase, rubrique **Hosting**.
 2. Ouvrez-la : l'écran « Résolveur d'irritants » s'affiche, avec **Groq** déjà sélectionné.
 3. Collez votre clé `gsk_…`, cliquez sur **Tester la clé** : le message « Clé valide » doit apparaître.
-4. Cliquez sur **Commencer**, puis sur l'un des exemples d'irritants. L'assistant doit répondre en quelques secondes.
+4. Cliquez sur **Commencer**, puis sur l'un des exemples d'irritants. L'assistant doit répondre en quelques secondes avec **3 questions**. Répondez-y : il propose alors **3 solutions**.
 5. Ajoutez l'adresse à vos favoris et partagez-la avec vos utilisateurs.
 
 ---
@@ -314,8 +323,9 @@ Le champ **Modèle** propose `openai/gpt-oss-120b` par défaut. Après **Tester 
 2. Cliquer sur **Tester la clé** : le message « Clé valide » apparaît et la liste des modèles se remplit dans le champ **Modèle**. Garder celui proposé par défaut ou en choisir un autre.
 3. Indiquer éventuellement son activité (ex. « assistante de direction dans une collectivité ») pour des réponses mieux adaptées.
 4. Cocher **Mémoriser ma clé sur cet appareil** uniquement sur un ordinateur personnel.
-5. Cliquer sur **Commencer**, décrire l'irritant, répondre aux questions de l'assistant.
-6. **Exporter** permet de récupérer la conversation (plan d'action compris) dans un fichier `.md` lisible avec n'importe quel éditeur de texte.
+5. Cliquer sur **Commencer**, décrire l'irritant en une ou deux phrases, puis répondre aux **3 questions** de l'assistant (un seul message suffit).
+6. Lire les **3 solutions** proposées, puis cliquer sur **Partager mon irritant** pour faire remonter la fiche.
+7. **Exporter** permet de récupérer la conversation (plan d'action compris) dans un fichier `.md` lisible avec n'importe quel éditeur de texte.
 
 ### 5. Autres fournisseurs (si besoin)
 
@@ -335,7 +345,7 @@ L'application accepte aussi d'autres fournisseurs, à choisir dans la liste **Fo
 
 Cette étape ajoute deux choses :
 
-- **Pour vos utilisateurs** : sous la réponse de l'assistant, un bouton **« Partager mon irritant »**. L'IA résume la conversation en une **fiche anonyme** (catégorie, résumé, mots-clés, fréquence, impact, piste de solution). L'utilisateur la relit, la corrige, coche la case d'accord et l'envoie. Il peut laisser son e-mail s'il veut être prévenu du traitement.
+- **Pour vos utilisateurs** : sous les 3 solutions proposées par l'assistant, un bouton **« Partager mon irritant »**. L'IA résume la conversation en une **fiche anonyme** (catégorie, résumé, mots-clés, fréquence, impact et les 3 solutions). L'utilisateur la relit, la corrige, indique la solution qui lui paraît la plus utile, coche la case d'accord et l'envoie. Il peut laisser son e-mail s'il veut être prévenu du traitement.
 - **Pour vous** : une **page de suivi** réservée à votre compte Google, à l'adresse `https://VOTRE-ID-DE-PROJET.web.app/suivi`. Vous y voyez toutes les fiches, les catégories et mots-clés les plus cités, vous changez le statut de chaque fiche (Nouveau, En analyse, Action en cours, Traité, Écarté), vous notez l'action menée et vous exportez le tout vers Excel.
 
 Les fiches sont enregistrées dans **Firestore**, la base de données de Firebase, dans le même projet. Le plan gratuit suffit (20 000 fiches envoyées et 50 000 lectures par jour). Tant que cette étape n'est pas faite, le bouton de partage reste simplement caché.
@@ -370,6 +380,8 @@ Les règles protègent la base : **tout le monde peut déposer une fiche, mais p
    Pour autoriser plusieurs personnes : `['marie.dupont@gmail.com', 'paul.martin@gmail.com']`.
 4. Cliquez sur **Publier**. Si un message rouge apparaît, vérifiez les apostrophes autour de l'adresse.
 
+> **Vous aviez déjà collé les règles ?** Recollez-les : le fichier `firestore.rules` a changé avec la nouvelle fiche (3 solutions et solution préférée). Sinon, l'envoi des fiches est refusé.
+
 > Faites ce remplacement **uniquement dans la console**, pas dans le fichier `firestore.rules` déposé sur GitHub : ainsi votre adresse n'apparaît pas dans le dépôt.
 
 ### 10.5 Déposer les nouveaux fichiers sur GitHub
@@ -390,7 +402,7 @@ Le RGPD impose d'informer les utilisateurs. La page `confidentialite.html` est p
 ### 10.7 Tester
 
 1. Ouvrez l'application (rechargez avec **Cmd + Maj + R** ou **Ctrl + F5**), décrivez un irritant et attendez la réponse.
-2. Sous la réponse, cliquez sur **Partager mon irritant**. Après quelques secondes, la fiche se remplit. Relisez-la, cochez la case d'accord, cliquez sur **Envoyer la fiche** : le message « Merci ! » s'affiche.
+2. Répondez aux 3 questions. Sous les 3 solutions, cliquez sur **Partager mon irritant**. Après quelques secondes, la fiche se remplit. Relisez-la, cochez la case d'accord, cliquez sur **Envoyer la fiche** : le message « Merci ! » s'affiche.
 3. Ouvrez **`https://VOTRE-ID-DE-PROJET.web.app/suivi`** (ou `/suivi` derrière votre nom de domaine) et ajoutez-la à vos favoris.
 4. Cliquez sur **Se connecter avec Google**, choisissez le compte indiqué dans les règles : la fiche apparaît.
 
@@ -407,7 +419,7 @@ Le RGPD impose d'informer les utilisateurs. La page `confidentialite.html` est p
 Une routine simple, par exemple chaque mois :
 
 1. Cliquez sur **Nouveau** pour voir les fiches arrivées.
-2. Regardez le tableau **Catégories** et les **Mots-clés les plus cités** : cliquez sur un mot-clé pour regrouper les fiches qui se ressemblent.
+2. Regardez le tableau **Catégories**, la **solution jugée la plus utile** (elle montre où l'IA est attendue) et les **Mots-clés les plus cités** : cliquez sur un mot-clé pour regrouper les fiches qui se ressemblent.
 3. Décidez des actions, passez les fiches au bon statut et notez l'action dans **Votre commentaire**, puis **Enregistrer**.
 4. Quand une fiche est **Traitée**, cliquez sur l'adresse e-mail (si l'utilisateur en a laissé une) pour le prévenir : c'est ce qui boucle la boucle.
 5. **Exporter (Excel)** produit un fichier à ouvrir dans Excel pour vos comités ou vos bilans (l'export respecte les filtres affichés).
@@ -435,7 +447,7 @@ Toutes ces modifications se font sur GitHub avec le crayon ✏️ (voir Étape 7
 
 | Je veux… | Fichier à modifier |
 |---|---|
-| Changer la méthode, le ton, les règles de l'assistant | `public/js/prompt.js` (fonction `buildSystemPrompt`) |
+| Changer les 3 questions, les 3 types de solutions, le ton | `public/js/prompt.js` (fonction `buildSystemPrompt`) |
 | Changer les exemples d'irritants affichés à l'accueil | `public/js/prompt.js` (liste `EXAMPLES`) |
 | Changer le modèle Groq proposé par défaut | `public/js/providers.js` (bloc `groq`, ligne `defaultModel`) |
 | Proposer un autre fournisseur par défaut | `public/js/providers.js` : le premier bloc de la liste est celui sélectionné à l'ouverture |
@@ -480,7 +492,7 @@ Sur la page de la mise en ligne en échec, regardez le cadre **Annotations** : i
 | « Conversation trop longue… (HTTP 413) » | L'historique envoyé dépasse la limite de tokens par minute de la formule gratuite | Exporter la conversation, puis cliquer sur **Nouvelle conversation** en résumant l'essentiel. |
 | « Modèle introuvable » ou HTTP 400/404 | Nom de modèle inexistant ou retiré | Cliquer sur **Tester la clé** et choisir un modèle de la liste. |
 | « Impossible de joindre le fournisseur » | Pas de connexion ou réseau d'entreprise filtrant | Tester sur un autre réseau (par exemple le partage de connexion du téléphone) ; sinon demander au service informatique d'autoriser `api.groq.com`. |
-| Le bouton « Partager mon irritant » n'apparaît pas | Application Web non déclarée, ou ancienne version en cache | Étape 10.3 ; puis recharger avec Ctrl + F5 / Cmd + Maj + R. Le bouton n'apparaît qu'après la première réponse de l'assistant. |
+| Le bouton « Partager mon irritant » n'apparaît pas | Application Web non déclarée, ou ancienne version en cache | Étape 10.3 ; puis recharger avec Ctrl + F5 / Cmd + Maj + R. Le bouton n'apparaît qu'après la réponse contenant les 3 solutions. |
 | « La fiche n'a pas pu être préparée automatiquement » | Limite Groq atteinte ou réponse illisible du modèle | Remplir la fiche à la main, ou patienter une minute et recommencer. |
 | « La base de données n'est pas encore créée » | Firestore pas créé | Étape 10.1. |
 | « Accès refusé par les règles de sécurité » à l'envoi d'une fiche | Règles non publiées ou mal collées | Étape 10.4 : recoller tout le fichier `firestore.rules` et **Publier**. |

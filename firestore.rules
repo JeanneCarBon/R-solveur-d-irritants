@@ -21,18 +21,22 @@ service cloud.firestore {
 
     // Vérifie qu'une nouvelle fiche est complète, raisonnable et anonyme par défaut.
     function ficheValide(d) {
-      return d.keys().hasOnly(['categorie', 'resume', 'motsCles', 'frequence', 'impact', 'piste',
-                               'activite', 'avis', 'email', 'statut', 'commentaire', 'consentement', 'createdAt'])
-        && d.keys().hasAll(['categorie', 'resume', 'motsCles', 'frequence', 'impact', 'piste',
-                            'activite', 'avis', 'email', 'statut', 'commentaire', 'consentement', 'createdAt'])
+      return d.keys().hasOnly(['categorie', 'resume', 'motsCles', 'frequence', 'impact',
+                               'solutionRapide', 'solutionOrga', 'solutionIA', 'prefere',
+                               'activite', 'email', 'statut', 'commentaire', 'consentement', 'createdAt'])
+        && d.keys().hasAll(['categorie', 'resume', 'motsCles', 'frequence', 'impact',
+                            'solutionRapide', 'solutionOrga', 'solutionIA', 'prefere',
+                            'activite', 'email', 'statut', 'commentaire', 'consentement', 'createdAt'])
         && texte(d.categorie, 60) && d.categorie.size() > 0
         && texte(d.resume, 1500) && d.resume.size() > 0
         && d.motsCles is list && d.motsCles.size() <= 8
         && texte(d.frequence, 200)
         && texte(d.impact, 300)
-        && texte(d.piste, 800)
+        && texte(d.solutionRapide, 600)
+        && texte(d.solutionOrga, 600)
+        && texte(d.solutionIA, 600)
         && texte(d.activite, 200)
-        && d.avis in ['utile', 'pas_utile', '']
+        && d.prefere in ['rapide', 'orga', 'ia', '']
         && texte(d.email, 200) && d.email.matches('^$|^[^@ ]+@[^@ ]+[.][^@ ]+$')
         && d.statut == 'nouveau'
         && d.commentaire == ''

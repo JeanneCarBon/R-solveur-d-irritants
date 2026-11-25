@@ -6,6 +6,8 @@
   <title>Résolveur d'irritants</title>
   <meta name="description" content="Un assistant d'IA générative pour trouver des solutions aux irritants de votre activité, avec votre propre clé API.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#110826">
+  <link rel="preload" href="fonts/figtree.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
   <script type="module" src="js/app.js"></script>
 </head>
@@ -17,7 +19,7 @@
       <div class="brand">
         <img src="favicon.svg" alt="" width="40" height="40">
         <div>
-          <h1>Résolveur d'irritants</h1>
+          <h1 class="key-message">Résolveur d'<span class="key">irritants</span></h1>
           <p class="muted">Décrivez ce qui vous freine au quotidien, l'IA vous aide à trouver une solution.</p>
         </div>
       </div>
@@ -82,7 +84,7 @@
 
     <section id="messages" class="messages" aria-live="polite">
       <div id="welcome" class="welcome">
-        <h2>Quel irritant voulez-vous résoudre ?</h2>
+        <h2 class="key-message">Quel <span class="key">irritant</span> voulez-vous résoudre ?</h2>
         <p class="muted">Décrivez la situation en une ou deux phrases. L'assistant vous pose <strong>3 questions</strong>, puis vous propose <strong>3 solutions</strong> : une rapide sans IA, une d'organisation et une avec l'IA. Vous pourrez ensuite faire remonter votre irritant en un clic.</p>
         <div id="examples" class="examples"></div>
       </div>
@@ -96,7 +98,7 @@
     <!-- FICHE IRRITANT À PARTAGER -->
     <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title">
       <form id="share-form" novalidate>
-        <h2 id="share-title">Partager mon irritant</h2>
+        <h2 id="share-title" class="key-message">Partager mon <span class="key">irritant</span></h2>
         <p class="muted">L'IA a résumé votre irritant et les 3 solutions en une fiche anonyme. Relisez-la, corrigez-la si besoin et retirez toute information personnelle ou confidentielle avant l'envoi.</p>
         <p id="share-status" class="hint" role="status"></p>
 

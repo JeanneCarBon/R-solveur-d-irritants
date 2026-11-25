@@ -24,6 +24,7 @@ agent-irritants/
 │   ├── suivi.html          ← page de suivi des irritants (réservée)
 │   ├── confidentialite.html← politique de confidentialité (à compléter)
 │   ├── favicon.svg
+│   ├── fonts/              ← polices Figtree et JetBrains Mono (hébergées avec le site)
 │   ├── css/style.css
 │   └── js/
 │       ├── app.js          ← logique de l'interface

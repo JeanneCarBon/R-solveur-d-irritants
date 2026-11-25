@@ -44,7 +44,7 @@ agent-irritants/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml      (la mise en ligne automatique)
-├── public/                 (index.html, favicon.svg, css/, js/)
+├── public/                 (index.html, suivi.html, favicon.svg, css/, fonts/, js/)
 ├── firebase.json
 ├── firestore.rules         (règles de la base de données, étape 10)
 ├── .gitignore
@@ -451,7 +451,7 @@ Toutes ces modifications se font sur GitHub avec le crayon ✏️ (voir Étape 7
 | Changer les exemples d'irritants affichés à l'accueil | `public/js/prompt.js` (liste `EXAMPLES`) |
 | Changer le modèle Groq proposé par défaut | `public/js/providers.js` (bloc `groq`, ligne `defaultModel`) |
 | Proposer un autre fournisseur par défaut | `public/js/providers.js` : le premier bloc de la liste est celui sélectionné à l'ouverture |
-| Changer les couleurs | `public/css/style.css` (variables en haut du fichier) |
+| Changer les couleurs et les polices de la charte | `public/css/style.css` (variables en haut du fichier ; polices dans `public/fonts/`) |
 | Changer les textes de l'interface | `public/index.html` |
 | Changer les catégories des fiches | `public/js/prompt.js` (liste `CATEGORIES`) |
 | Changer la façon dont l'IA résume la fiche | `public/js/prompt.js` (fonction `buildFichePrompt`) |

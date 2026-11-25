@@ -125,8 +125,9 @@ function render() {
   }
 }
 
-function chipButton(label, active, onClick) {
+function chipButton(label, active, onClick, statut) {
   const b = document.createElement("button");
+  if (statut) b.dataset.statut = statut;
   b.type = "button";
   b.className = "filter-chip" + (active ? " active" : "");
   b.setAttribute("aria-pressed", String(active));
@@ -141,7 +142,7 @@ function renderStatusFilters() {
   box.replaceChildren(
     chipButton(`Toutes (${fiches.length})`, !filters.statut, () => { filters.statut = ""; render(); }),
     ...Object.entries(STATUTS).map(([k, label]) =>
-      chipButton(`${label} (${count(k)})`, filters.statut === k, () => { filters.statut = filters.statut === k ? "" : k; render(); })
+      chipButton(`${label} (${count(k)})`, filters.statut === k, () => { filters.statut = filters.statut === k ? "" : k; render(); }, k)
     )
   );
 }
@@ -235,7 +236,7 @@ function renderFiche(f) {
   const saved = el.querySelector(".fiche-saved");
   const saveBtn = el.querySelector(".fiche-save");
 
-  const markDirty = () => { saved.textContent = "Modifications non enregistrées"; saved.className = "fiche-saved hint bad"; };
+  const markDirty = () => { saved.textContent = "Modifications non enregistrées"; saved.className = "fiche-saved hint warn"; };
   sel.addEventListener("change", markDirty);
   comment.addEventListener("input", markDirty);
 
